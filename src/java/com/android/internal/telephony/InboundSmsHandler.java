@@ -99,12 +99,18 @@ public abstract class InboundSmsHandler extends StateMachine {
     private static final boolean VDBG = false; // STOPSHIP if true, logs user data
 
     /** Query projection for checking for duplicate message segments. */
-    private static final String[] PDU_PROJECTION = {
+    // MTK-START
+    // Modification for sub class
+    protected static final String[] PDU_PROJECTION = {
+    // MTK-END
             "pdu"
     };
 
     /** Query projection for combining concatenated message segments. */
-    private static final String[] PDU_SEQUENCE_PORT_PROJECTION = {
+    // MTK-START
+    // Modification for sub class
+    protected static final String[] PDU_SEQUENCE_PORT_PROJECTION = {
+    // MTK-END
             "pdu",
             "sequence",
             "destination_port",
@@ -112,8 +118,11 @@ public abstract class InboundSmsHandler extends StateMachine {
     };
 
     /** Mapping from DB COLUMN to PDU_SEQUENCE_PORT PROJECTION index */
-    private static final Map<Integer, Integer> PDU_SEQUENCE_PORT_PROJECTION_INDEX_MAPPING =
+    // MTK-START
+    // Modification for sub class
+    protected static final Map<Integer, Integer> PDU_SEQUENCE_PORT_PROJECTION_INDEX_MAPPING =
             new HashMap<Integer, Integer>() {{
+    // MTK-END
                 put(PDU_COLUMN, 0);
                 put(SEQUENCE_COLUMN, 1);
                 put(DESTINATION_PORT_COLUMN, 2);
@@ -140,10 +149,16 @@ public abstract class InboundSmsHandler extends StateMachine {
     public static final int EVENT_BROADCAST_SMS = 2;
 
     /** Message from resultReceiver notifying {@link WaitingState} of a completed broadcast. */
-    private static final int EVENT_BROADCAST_COMPLETE = 3;
+    // MTK-START
+    // Modification for sub class
+    protected static final int EVENT_BROADCAST_COMPLETE = 3;
+    // MTK-END
 
     /** Sent on exit from {@link WaitingState} to return to idle after sending all broadcasts. */
-    private static final int EVENT_RETURN_TO_IDLE = 4;
+    // MTK-START
+    // Modification for sub class
+    protected static final int EVENT_RETURN_TO_IDLE = 4;
+    // MTK-END
 
     /** Release wakelock after {@link #mWakeLockTimeout} when returning to idle state. */
     private static final int EVENT_RELEASE_WAKELOCK = 5;
@@ -166,36 +181,51 @@ public abstract class InboundSmsHandler extends StateMachine {
     private static final int NOTIFICATION_ID_NEW_MESSAGE = 1;
 
     /** URI for raw table of SMS provider. */
-    protected static final Uri sRawUri = Uri.withAppendedPath(Telephony.Sms.CONTENT_URI, "raw");
-    protected static final Uri sRawUriPermanentDelete =
+    // MTK-START
+    // Modification for sub class
+    public static final Uri sRawUri = Uri.withAppendedPath(Telephony.Sms.CONTENT_URI, "raw");
+    public static final Uri sRawUriPermanentDelete =
             Uri.withAppendedPath(Telephony.Sms.CONTENT_URI, "raw/permanentDelete");
+    // MTK-END
 
     protected final Context mContext;
-    private final ContentResolver mResolver;
+    // MTK-START
+    // Modification for sub class
+    protected final ContentResolver mResolver;
+    // MTK-END
 
     /** Special handler for WAP push messages. */
-    private final WapPushOverSms mWapPush;
+    // MTK-START
+    // Modification for sub class
+    protected final WapPushOverSms mWapPush;
+    // MTK-END
 
     /** Wake lock to ensure device stays awake while dispatching the SMS intents. */
     private final PowerManager.WakeLock mWakeLock;
 
     /** DefaultState throws an exception or logs an error for unhandled message types. */
-    private final DefaultState mDefaultState = new DefaultState();
+    // MTK-START
+    // Modification for sub class
+    // change variable attribute for sub class
+    protected DefaultState mDefaultState = new DefaultState();
 
     /** Startup state. Waiting for {@link SmsBroadcastUndelivered} to complete. */
-    private final StartupState mStartupState = new StartupState();
+    protected StartupState mStartupState = new StartupState();
 
     /** Idle state. Waiting for messages to process. */
-    private final IdleState mIdleState = new IdleState();
+    protected IdleState mIdleState = new IdleState();
 
     /** Delivering state. Saves the PDU in the raw table and acknowledges to SMSC. */
-    private final DeliveringState mDeliveringState = new DeliveringState();
+    protected DeliveringState mDeliveringState = new DeliveringState();
 
     /** Broadcasting state. Waits for current broadcast to complete before delivering next. */
-    private final WaitingState mWaitingState = new WaitingState();
+    protected WaitingState mWaitingState = new WaitingState();
+    // MTK-END
 
     /** Helper class to check whether storage is available for incoming messages. */
-    protected SmsStorageMonitor mStorageMonitor;
+    // MTK-START, change as public for GsmSmsDispatcher to use
+    public SmsStorageMonitor mStorageMonitor;
+    // MTK-END
 
     private final boolean mSmsReceiveDisabled;
 
@@ -203,15 +233,20 @@ public abstract class InboundSmsHandler extends StateMachine {
 
     protected CellBroadcastHandler mCellBroadcastHandler;
 
-    private UserManager mUserManager;
+    // MTK-START
+    // Modification for sub class
+    protected UserManager mUserManager;
+    // MTK-END
 
     IDeviceIdleController mDeviceIdleController;
 
     // Delete permanently from raw table
-    private final int DELETE_PERMANENTLY = 1;
+    // MTK-START
+    // Modification for sub class
+    protected final int DELETE_PERMANENTLY = 1;
     // Only mark deleted, but keep in db for message de-duping
-    private final int MARK_DELETED = 2;
-
+    protected final int MARK_DELETED = 2;
+    // MTK-END
     private static String ACTION_OPEN_SMS_APP =
         "com.android.internal.telephony.OPEN_DEFAULT_SMS_APP";
 
@@ -233,7 +268,10 @@ public abstract class InboundSmsHandler extends StateMachine {
         mPhone = phone;
         mCellBroadcastHandler = cellBroadcastHandler;
         mResolver = context.getContentResolver();
-        mWapPush = new WapPushOverSms(context);
+        // MTK-START
+        // Modification for sub class
+        mWapPush = TelephonyComponentFactory.getInstance().makeWapPushOverSms(context);
+        // MTK-END
 
         boolean smsCapable = mContext.getResources().getBoolean(
                 com.android.internal.R.bool.config_sms_capable);
@@ -256,6 +294,30 @@ public abstract class InboundSmsHandler extends StateMachine {
         if (DBG) log("created InboundSmsHandler");
     }
 
+    // MTK-START
+    // Add a dummy constructor for sub class
+    protected InboundSmsHandler(String name, Context context, SmsStorageMonitor storageMonitor,
+            Phone phone, CellBroadcastHandler cellBroadcastHandler, Object dummy) {
+        super(name);
+        mContext = context;
+        mStorageMonitor = storageMonitor;
+        mPhone = phone;
+        mCellBroadcastHandler = cellBroadcastHandler;
+        mResolver = context.getContentResolver();
+        mWapPush = TelephonyComponentFactory.getInstance().makeWapPushOverSms(context);
+
+        boolean smsCapable = mContext.getResources().getBoolean(
+                com.android.internal.R.bool.config_sms_capable);
+        mSmsReceiveDisabled = !TelephonyManager.from(mContext).getSmsReceiveCapableForPhone(
+                mPhone.getPhoneId(), smsCapable);
+
+        PowerManager pm = (PowerManager) mContext.getSystemService(Context.POWER_SERVICE);
+        mWakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, name);
+        mWakeLock.acquire();    // wake lock released after we enter idle state
+        mUserManager = (UserManager) mContext.getSystemService(Context.USER_SERVICE);
+        mDeviceIdleController = TelephonyComponentFactory.getInstance().getIDeviceIdleController();
+    }
+    // MTK-END
     /**
      * Tell the state machine to quit after processing all messages.
      */
@@ -291,7 +353,10 @@ public abstract class InboundSmsHandler extends StateMachine {
      * This parent state throws an exception (for debug builds) or prints an error for unhandled
      * message types.
      */
-    private class DefaultState extends State {
+    // MTK-START
+    // Modification for sub class
+    public class DefaultState extends State {
+    // MTK-END
         @Override
         public boolean processMessage(Message msg) {
             switch (msg.what) {
@@ -325,7 +390,10 @@ public abstract class InboundSmsHandler extends StateMachine {
      * The Startup state waits for {@link SmsBroadcastUndelivered} to process the raw table and
      * notify the state machine to broadcast any complete PDUs that might not have been broadcast.
      */
-    private class StartupState extends State {
+    // MTK-START
+    // Modification for sub class
+    public class StartupState extends State {
+    // MTK-END
         @Override
         public void enter() {
             if (DBG) log("entering Startup state");
@@ -362,7 +430,10 @@ public abstract class InboundSmsHandler extends StateMachine {
      * In the idle state the wakelock is released until a new SM arrives, then we transition
      * to Delivering mode to handle it, acquiring the wakelock on exit.
      */
-    private class IdleState extends State {
+    // MTK-START
+    // Modification for sub class
+    public class IdleState extends State {
+    // MTK-END
         @Override
         public void enter() {
             if (DBG) log("entering Idle state");
@@ -418,7 +489,10 @@ public abstract class InboundSmsHandler extends StateMachine {
      * transition to {@link WaitingState} state to send the ordered broadcast and wait for the
      * results. When all messages have been processed, the halting state will release the wakelock.
      */
-    private class DeliveringState extends State {
+    // MTK-START
+    // Modification for sub class
+    public class DeliveringState extends State {
+    // MTK-END
         @Override
         public void enter() {
             if (DBG) log("entering Delivering state");
@@ -491,7 +565,10 @@ public abstract class InboundSmsHandler extends StateMachine {
      * {@link DeliveringState}, {@link #EVENT_RETURN_TO_IDLE} is sent to transition to
      * {@link IdleState} after any deferred {@link #EVENT_BROADCAST_SMS} messages are handled.
      */
-    private class WaitingState extends State {
+    // MTK-START
+    // Modification for sub class
+    public class WaitingState extends State {
+    // MTK-END
 
         @Override
         public void enter() {
@@ -753,7 +830,10 @@ public abstract class InboundSmsHandler extends StateMachine {
      * @param tracker the tracker containing the message segment to process
      * @return true if an ordered broadcast was sent; false if waiting for more message segments
      */
-    private boolean processMessagePart(InboundSmsTracker tracker) {
+    // MTK-START
+    // Modification for sub class
+    protected boolean processMessagePart(InboundSmsTracker tracker) {
+    // MTK-END
         int messageCount = tracker.getMessageCount();
         byte[][] pdus;
         int destPort = tracker.getDestPort();
@@ -917,8 +997,11 @@ public abstract class InboundSmsHandler extends StateMachine {
      *
      * @return true if an ordered broadcast was sent to the carrier app; false otherwise.
      */
-    private boolean processMessagePartWithUserLocked(InboundSmsTracker tracker,
+    // MTK-START
+    // Modification for sub class
+    protected boolean processMessagePartWithUserLocked(InboundSmsTracker tracker,
             byte[][] pdus, int destPort, SmsBroadcastReceiver resultReceiver) {
+    // MTK-END
         log("Credential-encrypted storage not available. Port: " + destPort);
         if (destPort == SmsHeader.PORT_WAP_PUSH && mWapPush.isWapPushForMms(pdus[0], this)) {
             showNewMessageNotification();
@@ -991,8 +1074,11 @@ public abstract class InboundSmsHandler extends StateMachine {
      *
      * @return true if a filter is invoked and the SMS processing flow is diverted, false otherwise.
      */
-    private boolean filterSms(byte[][] pdus, int destPort,
+    // MTK-START
+    // Modification for sub class
+    protected boolean filterSms(byte[][] pdus, int destPort,
         InboundSmsTracker tracker, SmsBroadcastReceiver resultReceiver, boolean userUnlocked) {
+    // MTK-END
         CarrierServicesSmsFilterCallback filterCallback =
                 new CarrierServicesSmsFilterCallback(
                         pdus, destPort, tracker.getFormat(), resultReceiver, userUnlocked);
@@ -1077,8 +1163,11 @@ public abstract class InboundSmsHandler extends StateMachine {
     /**
      * Helper for {@link SmsBroadcastUndelivered} to delete an old message in the raw table.
      */
-    private void deleteFromRawTable(String deleteWhere, String[] deleteWhereArgs,
+    // MTK-START
+    // Modification for sub class
+    protected void deleteFromRawTable(String deleteWhere, String[] deleteWhereArgs,
                                     int deleteType) {
+    // MTK-END
         Uri uri = deleteType == DELETE_PERMANENTLY ? sRawUriPermanentDelete : sRawUri;
         int rows = mResolver.delete(uri, deleteWhere, deleteWhereArgs);
         if (rows == 0) {
@@ -1088,7 +1177,10 @@ public abstract class InboundSmsHandler extends StateMachine {
         }
     }
 
-    private Bundle handleSmsWhitelisting(ComponentName target) {
+    // MTK-START
+    // Modification for sub class
+    protected Bundle handleSmsWhitelisting(ComponentName target) {
+    // MTK-END
         String pkgName;
         String reason;
         if (target != null) {
@@ -1119,8 +1211,10 @@ public abstract class InboundSmsHandler extends StateMachine {
      * @param destPort the destination port
      * @param resultReceiver the receiver handling the delivery result
      */
-    private void dispatchSmsDeliveryIntent(byte[][] pdus, String format, int destPort,
+    // MTK-START
+    protected void dispatchSmsDeliveryIntent(byte[][] pdus, String format, int destPort,
             SmsBroadcastReceiver resultReceiver) {
+    // MTK-END
         Intent intent = new Intent();
         intent.putExtra("pdus", pdus);
         intent.putExtra("format", format);
@@ -1177,7 +1271,10 @@ public abstract class InboundSmsHandler extends StateMachine {
      * keeping both messages in db can cause ambiguity)
      * @return true if duplicate exists, false otherwise
      */
-    private boolean duplicateExists(InboundSmsTracker tracker) throws SQLException {
+    // MTK-START
+    // Modification for sub class
+    protected boolean duplicateExists(InboundSmsTracker tracker) throws SQLException {
+    // MT-END
         String address = tracker.getAddress();
         // convert to strings for query
         String refNumber = Integer.toString(tracker.getReferenceNumber());
@@ -1201,9 +1298,16 @@ public abstract class InboundSmsHandler extends StateMachine {
         Cursor cursor = null;
         try {
             // Check for duplicate message segments
+            // MTK-START: a hook for duplicateExists
+            /*
             cursor = mResolver.query(sRawUri, PDU_PROJECTION, where,
                     new String[]{address, refNumber, count, seqNumber, date, messageBody},
                     null);
+            */
+            cursor = onGetDupCursor(sRawUri, PDU_PROJECTION, where,
+                    new String[]{address, refNumber, count, seqNumber, date, messageBody},
+                    null);
+            // MTK-END
 
             // moveToNext() returns false if no duplicates were found
             if (cursor != null && cursor.moveToNext()) {
@@ -1241,7 +1345,10 @@ public abstract class InboundSmsHandler extends StateMachine {
      * @param tracker the tracker to add to the raw table
      * @return true on success; false on failure to write to database
      */
-    private int addTrackerToRawTable(InboundSmsTracker tracker, boolean deDup) {
+    // MTK-START
+    // Modification for sub class
+    protected int addTrackerToRawTable(InboundSmsTracker tracker, boolean deDup) {
+    // MTK-END
         if (deDup) {
             try {
                 if (duplicateExists(tracker)) {
@@ -1285,7 +1392,10 @@ public abstract class InboundSmsHandler extends StateMachine {
      * Returns whether the default message format for the current radio technology is 3GPP2.
      * @return true if the radio technology uses 3GPP2 format by default, false for 3GPP format
      */
-    static boolean isCurrentFormat3gpp2() {
+    // MTK-START
+    // Modification for sub class
+    public static boolean isCurrentFormat3gpp2() {
+    // MTK-END
         int activePhone = TelephonyManager.getDefault().getCurrentPhoneType();
         return (PHONE_TYPE_CDMA == activePhone);
     }
@@ -1294,12 +1404,18 @@ public abstract class InboundSmsHandler extends StateMachine {
      * Handler for an {@link InboundSmsTracker} broadcast. Deletes PDUs from the raw table and
      * logs the broadcast duration (as an error if the other receivers were especially slow).
      */
-    private final class SmsBroadcastReceiver extends BroadcastReceiver {
+    // MTK-START
+    // Modification for sub class
+    protected final class SmsBroadcastReceiver extends BroadcastReceiver {
+    // MTK-END
         private final String mDeleteWhere;
         private final String[] mDeleteWhereArgs;
         private long mBroadcastTimeNano;
 
-        SmsBroadcastReceiver(InboundSmsTracker tracker) {
+        // MTK-START
+        // Modification for sub class
+        public SmsBroadcastReceiver(InboundSmsTracker tracker) {
+        // MTK-END
             mDeleteWhere = tracker.getDeleteWhere();
             mDeleteWhereArgs = tracker.getDeleteWhereArgs();
             mBroadcastTimeNano = System.nanoTime();
@@ -1377,16 +1493,22 @@ public abstract class InboundSmsHandler extends StateMachine {
     /**
      * Callback that handles filtering results by carrier services.
      */
-    private final class CarrierServicesSmsFilterCallback implements
+    // MTK-START
+    // Modification for sub class
+    public final class CarrierServicesSmsFilterCallback implements
             CarrierServicesSmsFilter.CarrierServicesSmsFilterCallbackInterface {
+    // MTK-END
         private final byte[][] mPdus;
         private final int mDestPort;
         private final String mSmsFormat;
         private final SmsBroadcastReceiver mSmsBroadcastReceiver;
         private final boolean mUserUnlocked;
 
-        CarrierServicesSmsFilterCallback(byte[][] pdus, int destPort, String smsFormat,
+        // MTK-START
+        // Modification for sub class
+        public CarrierServicesSmsFilterCallback(byte[][] pdus, int destPort, String smsFormat,
                          SmsBroadcastReceiver smsBroadcastReceiver,  boolean userUnlocked) {
+        // MTK-END
             mPdus = pdus;
             mDestPort = destPort;
             mSmsFormat = smsFormat;
@@ -1472,7 +1594,10 @@ public abstract class InboundSmsHandler extends StateMachine {
      * @param intent The intent containing the received SMS
      * @return The URI of written message
      */
-    private Uri writeInboxMessage(Intent intent) {
+    // MTK-START
+    // Modification for sub class
+    protected Uri writeInboxMessage(Intent intent) {
+    // MTK-END
         final SmsMessage[] messages = Telephony.Sms.Intents.getMessagesFromIntent(intent);
         if (messages == null || messages.length < 1) {
             loge("Failed to parse SMS pdu");
@@ -1592,4 +1717,17 @@ public abstract class InboundSmsHandler extends StateMachine {
         userFilter.addAction(ACTION_OPEN_SMS_APP);
         context.registerReceiver(new NewMessageNotificationActionReceiver(), userFilter);
     }
+
+    // MTK-START
+    /**
+     * A hook for duplicateExists.
+     *
+     * The default implementation is AOSP's behavior.
+     * The sub class can change the query condition and return a different cursor.
+     */
+    protected Cursor onGetDupCursor(Uri uri, String[] projection, String selection,
+            String[] selectionArgs, String sortOrder) {
+        return mResolver.query(uri, projection, selection, selectionArgs, sortOrder);
+    }
+    // MTK-END
 }

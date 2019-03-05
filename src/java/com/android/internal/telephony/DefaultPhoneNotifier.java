@@ -286,8 +286,11 @@ public class DefaultPhoneNotifier implements PhoneNotifier {
     public void notifyPreciseDataConnectionFailed(Phone sender, String reason, String apnType,
             String apn, String failCause) {
         // FIXME: subId?
+        // Get subscription ID and notify for the subscriber
+        int subId = sender.getSubId();
         try {
-            mRegistry.notifyPreciseDataConnectionFailed(reason, apnType, apn, failCause);
+            mRegistry.notifyPreciseDataConnectionFailedForSubscriber(
+                    subId, reason, apnType, apn, failCause);
         } catch (RemoteException ex) {
             // system process is dead
         }

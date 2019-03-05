@@ -23,7 +23,10 @@ package com.android.internal.telephony;
  */
 public class SmsResponse {
     /** Message reference of the just-sent SMS. */
-    int mMessageRef;
+    // MTK-START
+    // Modification for sub class
+    public int mMessageRef;
+    // MTK-END
     /** ackPdu for the just-sent SMS. */
     String mAckPdu;
     /**

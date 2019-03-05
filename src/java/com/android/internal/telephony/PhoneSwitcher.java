@@ -44,6 +44,9 @@ import com.android.internal.util.IndentingPrintWriter;
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
+
+import java.lang.reflect.Method;
+
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
@@ -60,19 +63,19 @@ public class PhoneSwitcher extends Handler {
     private final static String LOG_TAG = "PhoneSwitcher";
     private final static boolean VDBG = false;
 
-    private final int mMaxActivePhones;
-    private final List<DcRequest> mPrioritizedDcRequests = new ArrayList<DcRequest>();
+    protected int mMaxActivePhones;
+    protected final List<DcRequest> mPrioritizedDcRequests = new ArrayList<DcRequest>();
     private final RegistrantList[] mActivePhoneRegistrants;
-    private final SubscriptionController mSubscriptionController;
-    private final int[] mPhoneSubscriptions;
+    protected final SubscriptionController mSubscriptionController;
+    protected final int[] mPhoneSubscriptions;
     private final CommandsInterface[] mCommandsInterfaces;
-    private final Context mContext;
+    protected final Context mContext;
     private final PhoneState[] mPhoneStates;
-    private final int mNumPhones;
-    private final Phone[] mPhones;
+    protected final int mNumPhones;
+    protected final Phone[] mPhones;
     private final LocalLog mLocalLog;
 
-    private int mDefaultDataSubscription;
+    protected int mDefaultDataSubscription;
 
     private final static int EVENT_DEFAULT_SUBSCRIPTION_CHANGED = 101;
     private final static int EVENT_SUBSCRIPTION_CHANGED         = 102;
@@ -132,6 +135,7 @@ public class PhoneSwitcher extends Handler {
         mContext.registerReceiver(mDefaultDataChangedReceiver,
                 new IntentFilter(TelephonyIntents.ACTION_DEFAULT_DATA_SUBSCRIPTION_CHANGED));
 
+        /* For Telephony Add-On
         NetworkCapabilities netCap = new NetworkCapabilities();
         netCap.addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR);
         netCap.addCapability(NetworkCapabilities.NET_CAPABILITY_MMS);
@@ -147,14 +151,34 @@ public class PhoneSwitcher extends Handler {
         netCap.addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_RESTRICTED);
         netCap.addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET);
         netCap.setNetworkSpecifier(new MatchAllNetworkSpecifier());
+        */
 
         NetworkFactory networkFactory = new PhoneSwitcherNetworkRequestListener(looper, context,
-                netCap, this);
+                makeNetworkFilter(), this);
         // we want to see all requests
         networkFactory.setScoreFilter(101);
         networkFactory.register();
 
         log("PhoneSwitcher started");
+    }
+
+    protected NetworkCapabilities makeNetworkFilter() {
+        NetworkCapabilities netCap = new NetworkCapabilities();
+        netCap.addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR);
+        netCap.addCapability(NetworkCapabilities.NET_CAPABILITY_MMS);
+        netCap.addCapability(NetworkCapabilities.NET_CAPABILITY_SUPL);
+        netCap.addCapability(NetworkCapabilities.NET_CAPABILITY_DUN);
+        netCap.addCapability(NetworkCapabilities.NET_CAPABILITY_FOTA);
+        netCap.addCapability(NetworkCapabilities.NET_CAPABILITY_IMS);
+        netCap.addCapability(NetworkCapabilities.NET_CAPABILITY_CBS);
+        netCap.addCapability(NetworkCapabilities.NET_CAPABILITY_IA);
+        netCap.addCapability(NetworkCapabilities.NET_CAPABILITY_RCS);
+        netCap.addCapability(NetworkCapabilities.NET_CAPABILITY_XCAP);
+        netCap.addCapability(NetworkCapabilities.NET_CAPABILITY_EIMS);
+        netCap.addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_RESTRICTED);
+        netCap.addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET);
+        netCap.setNetworkSpecifier(new MatchAllNetworkSpecifier());
+        return netCap;
     }
 
     private final BroadcastReceiver mDefaultDataChangedReceiver = new BroadcastReceiver() {
@@ -204,7 +228,7 @@ public class PhoneSwitcher extends Handler {
         }
     }
 
-    private boolean isEmergency() {
+    protected boolean isEmergency() {
         for (Phone p : mPhones) {
             if (p == null) continue;
             if (p.isInEcm() || p.isInEmergencyCall()) return true;
@@ -235,10 +259,30 @@ public class PhoneSwitcher extends Handler {
             msg.obj = networkRequest;
             msg.sendToTarget();
         }
+
+        @Override
+        public boolean acceptRequest(NetworkRequest request, int score) {
+            try {
+                Class<?> clz = Class.forName("com.mediatek.internal.telephony.MtkPhoneSwitcher");
+                Method method = clz.getMethod("acceptRequest", NetworkRequest.class, int.class);
+                if (method != null) {
+                    return (boolean) method.invoke(null, request, score);
+                } else {
+                    Rlog.e(LOG_TAG, "acceptRequest is null!");
+                }
+            } catch (Exception e) {
+                Rlog.e(LOG_TAG, "createInstance:got exception for acceptRequest " + e);
+            }
+            return super.acceptRequest(request, score);
+        }
     }
 
-    private void onRequestNetwork(NetworkRequest networkRequest) {
-        final DcRequest dcRequest = new DcRequest(networkRequest, mContext);
+    protected void onRequestNetwork(NetworkRequest networkRequest) {
+        /// M: for telephony add-on @{
+        final DcRequest dcRequest
+                = TelephonyComponentFactory.getInstance().makeDcRequest(networkRequest, mContext);
+        /// @}
+
         if (mPrioritizedDcRequests.contains(dcRequest) == false) {
             mPrioritizedDcRequests.add(dcRequest);
             Collections.sort(mPrioritizedDcRequests);
@@ -246,16 +290,19 @@ public class PhoneSwitcher extends Handler {
         }
     }
 
-    private void onReleaseNetwork(NetworkRequest networkRequest) {
-        final DcRequest dcRequest = new DcRequest(networkRequest, mContext);
+    protected void onReleaseNetwork(NetworkRequest networkRequest) {
+        /// M: for telephony add-on @{
+        final DcRequest dcRequest
+                = TelephonyComponentFactory.getInstance().makeDcRequest(networkRequest, mContext);
+        /// @}
 
         if (mPrioritizedDcRequests.remove(dcRequest)) {
             onEvaluate(REQUESTS_CHANGED, "netReleased");
         }
     }
 
-    private static final boolean REQUESTS_CHANGED   = true;
-    private static final boolean REQUESTS_UNCHANGED = false;
+    protected static final boolean REQUESTS_CHANGED   = true;
+    protected static final boolean REQUESTS_UNCHANGED = false;
     /**
      * Re-evaluate things.
      * Do nothing if nothing's changed.
@@ -265,7 +312,7 @@ public class PhoneSwitcher extends Handler {
      * phones that aren't in the active phone list.  Finally, activate all
      * phones in the active phone list.
      */
-    private void onEvaluate(boolean requestsChanged, String reason) {
+    protected void onEvaluate(boolean requestsChanged, String reason) {
         StringBuilder sb = new StringBuilder(reason);
         if (isEmergency()) {
             log("onEvalute aborted due to Emergency");
@@ -304,6 +351,8 @@ public class PhoneSwitcher extends Handler {
                 if (newActivePhones.size() >= mMaxActivePhones) break;
             }
 
+            suggestDefaultActivePhone(newActivePhones);
+
             if (VDBG) {
                 log("default subId = " + mDefaultDataSubscription);
                 for (int i = 0; i < mNumPhones; i++) {
@@ -331,7 +380,7 @@ public class PhoneSwitcher extends Handler {
         public long lastRequested = 0;
     }
 
-    private void deactivate(int phoneId) {
+    protected void deactivate(int phoneId) {
         PhoneState state = mPhoneStates[phoneId];
         if (state.active == false) return;
         state.active = false;
@@ -344,7 +393,7 @@ public class PhoneSwitcher extends Handler {
         mActivePhoneRegistrants[phoneId].notifyRegistrants();
     }
 
-    private void activate(int phoneId) {
+    protected void activate(int phoneId) {
         PhoneState state = mPhoneStates[phoneId];
         if (state.active == true) return;
         state.active = true;
@@ -374,7 +423,7 @@ public class PhoneSwitcher extends Handler {
         }
     }
 
-    private int phoneIdForRequest(NetworkRequest netRequest) {
+    protected int phoneIdForRequest(NetworkRequest netRequest) {
         NetworkSpecifier specifier = netRequest.networkCapabilities.getNetworkSpecifier();
         int subId;
 
@@ -425,6 +474,12 @@ public class PhoneSwitcher extends Handler {
         if (phoneId < 0 || phoneId >= mNumPhones) {
             throw new IllegalArgumentException("Invalid PhoneId");
         }
+    }
+
+    /**
+     * Overridable function to select active phone when newActivePhones is empty.
+     */
+    protected void suggestDefaultActivePhone(List<Integer> newActivePhones) {
     }
 
     private void log(String l) {

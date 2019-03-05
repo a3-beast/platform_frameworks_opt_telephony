@@ -118,7 +118,10 @@ public class ImsServiceInterfaceAdapter extends MmTelInterfaceAdapter {
         return getInterface().getMultiEndpointInterface(SERVICE_ID);
     }
 
-    private IImsService getInterface() throws RemoteException {
+    /**
+     * M: MTK add-on, make inheritable
+     */
+    protected IImsService getInterface() throws RemoteException {
         IImsService feature = IImsService.Stub.asInterface(mBinder);
         if (feature == null) {
             throw new RemoteException("Binder not Available");

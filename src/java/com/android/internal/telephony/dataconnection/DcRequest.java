@@ -67,7 +67,7 @@ public class DcRequest implements Comparable<DcRequest> {
         return o.priority - priority;
     }
 
-    private int apnIdForNetworkRequest(NetworkRequest nr) {
+    protected int apnIdForNetworkRequest(NetworkRequest nr) {
         NetworkCapabilities nc = nr.networkCapabilities;
         // For now, ignore the bandwidth stuff
         if (nc.getTransportTypes().length > 0 &&
@@ -139,10 +139,10 @@ public class DcRequest implements Comparable<DcRequest> {
         return apnId;
     }
 
-    private static final HashMap<Integer, Integer> sApnPriorityMap =
+    protected static final HashMap<Integer, Integer> sApnPriorityMap =
             new HashMap<Integer, Integer>();
 
-    private void initApnPriorities(Context context) {
+    protected void initApnPriorities(Context context) {
         synchronized (sApnPriorityMap) {
             if (sApnPriorityMap.isEmpty()) {
                 String[] networkConfigStrings = context.getResources().getStringArray(
@@ -161,7 +161,7 @@ public class DcRequest implements Comparable<DcRequest> {
         return (priority != null ? priority.intValue() : 0);
     }
 
-    private void loge(String s) {
+    protected void loge(String s) {
         Rlog.e(LOG_TAG, s);
     }
 }

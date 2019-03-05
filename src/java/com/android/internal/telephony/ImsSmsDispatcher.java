@@ -112,6 +112,7 @@ public class ImsSmsDispatcher extends SMSDispatcher {
                 throw new IllegalArgumentException("Invalid token.");
             }
             tracker.mMessageRef = messageRef;
+            handleImsSmsSendResult(tracker, mTrackers, token, status);
             switch(status) {
                 case ImsSmsImplBase.SEND_STATUS_OK:
                     tracker.onSent(mContext);
@@ -237,7 +238,10 @@ public class ImsSmsDispatcher extends SMSDispatcher {
     }
 
     @Override
-    protected String getFormat() {
+    // MTK-START
+    // Change visibility for the proprietary class
+    public String getFormat() {
+    // MTK-END
         try {
             return getImsManager().getSmsFormat();
         } catch (ImsException e) {
@@ -330,4 +334,11 @@ public class ImsSmsDispatcher extends SMSDispatcher {
     protected boolean isCdmaMo() {
         return mSmsDispatchersController.isCdmaFormat(getFormat());
     }
+
+    // MTK-START
+    protected void handleImsSmsSendResult(SmsTracker tracker,
+                           Map<Integer, SmsTracker> trackerMap, int token, int status) {
+         Rlog.d(TAG, "handleImsSmsSendResult do nothing");
+    }
+    // MTK-END
 }

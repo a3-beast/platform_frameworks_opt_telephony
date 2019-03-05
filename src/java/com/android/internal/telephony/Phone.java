@@ -165,8 +165,10 @@ public abstract class Phone extends Handler implements PhoneInternalInterface {
 
     // Used to intercept the carrier selection calls so that
     // we can save the values.
-    private static final int EVENT_SET_NETWORK_MANUAL_COMPLETE      = 16;
-    private static final int EVENT_SET_NETWORK_AUTOMATIC_COMPLETE   = 17;
+    // MTK-START: add-on
+    protected static final int EVENT_SET_NETWORK_MANUAL_COMPLETE      = 16;
+    protected static final int EVENT_SET_NETWORK_AUTOMATIC_COMPLETE   = 17;
+    // MTK-END
     protected static final int EVENT_SET_CLIR_COMPLETE              = 18;
     protected static final int EVENT_REGISTERED_TO_NETWORK          = 19;
     protected static final int EVENT_SET_VM_NUMBER_DONE             = 20;
@@ -230,7 +232,7 @@ public abstract class Phone extends Handler implements PhoneInternalInterface {
     /**
      * This method is invoked when the Phone exits Emergency Callback Mode.
      */
-    protected void handleExitEmergencyCallbackMode() {
+    public void handleExitEmergencyCallbackMode() {
     }
 
     /**
@@ -239,7 +241,9 @@ public abstract class Phone extends Handler implements PhoneInternalInterface {
      * if we are looking for automatic selection. operatorAlphaLong is the
      * corresponding operator name.
      */
-    private static class NetworkSelectMessage {
+    // MTK-START: add-on
+    public static class NetworkSelectMessage {
+    // MTK-END
         public Message message;
         public String operatorNumeric;
         public String operatorAlphaLong;
@@ -274,7 +278,7 @@ public abstract class Phone extends Handler implements PhoneInternalInterface {
     public SmsUsageMonitor mSmsUsageMonitor;
     protected AtomicReference<UiccCardApplication> mUiccApplication =
             new AtomicReference<UiccCardApplication>();
-    TelephonyTester mTelephonyTester;
+    public TelephonyTester mTelephonyTester;
     private String mName;
     private final String mActionDetached;
     private final String mActionAttached;
@@ -282,7 +286,7 @@ public abstract class Phone extends Handler implements PhoneInternalInterface {
 
     protected int mPhoneId;
 
-    private boolean mImsServiceReady = false;
+    protected boolean mImsServiceReady = false;
     protected Phone mImsPhone = null;
 
     private final AtomicReference<RadioCapability> mRadioCapability =
@@ -320,7 +324,7 @@ public abstract class Phone extends Handler implements PhoneInternalInterface {
     protected final RegistrantList mDisconnectRegistrants
             = new RegistrantList();
 
-    private final RegistrantList mServiceStateRegistrants
+    protected final RegistrantList mServiceStateRegistrants
             = new RegistrantList();
 
     protected final RegistrantList mMmiCompleteRegistrants
@@ -1185,7 +1189,9 @@ public abstract class Phone extends Handler implements PhoneInternalInterface {
         mCi.getNetworkSelectionMode(msg);
     }
 
-    private void onCheckForNetworkSelectionModeAutomatic(Message fromRil) {
+    // MTK-START: add-on
+    protected void onCheckForNetworkSelectionModeAutomatic(Message fromRil) {
+    // MTK-END
         AsyncResult ar = (AsyncResult)fromRil.obj;
         Message response = (Message)ar.userObj;
         boolean doAutomatic = true;
@@ -1287,7 +1293,9 @@ public abstract class Phone extends Handler implements PhoneInternalInterface {
         mEmergencyCallToggledRegistrants.remove(h);
     }
 
-    private void updateSavedNetworkOperator(NetworkSelectMessage nsm) {
+    // MTK-START: add-on
+    protected void updateSavedNetworkOperator(NetworkSelectMessage nsm) {
+    // MTK-END
         int subId = getSubId();
         if (SubscriptionManager.isValidSubscriptionId(subId)) {
             // open the shared preferences editor, and write the value.
@@ -1311,7 +1319,9 @@ public abstract class Phone extends Handler implements PhoneInternalInterface {
     /**
      * Used to track the settings upon completion of the network change.
      */
-    private void handleSetSelectNetwork(AsyncResult ar) {
+    // MTK-START: add-on
+    protected void handleSetSelectNetwork(AsyncResult ar) {
+    // MTK-END
         // look for our wrapper within the asyncresult, skip the rest if it
         // is null.
         if (!(ar.userObj instanceof NetworkSelectMessage)) {
@@ -1344,7 +1354,9 @@ public abstract class Phone extends Handler implements PhoneInternalInterface {
     /**
      * Clears the saved network selection.
      */
-    private void clearSavedNetworkSelection() {
+    // MTK-START: add-on
+    protected void clearSavedNetworkSelection() {
+    // MTK-END
         // open the shared preferences and search with our key.
         PreferenceManager.getDefaultSharedPreferences(getContext()).edit().
                 remove(NETWORK_SELECTION_KEY + getSubId()).
@@ -1357,7 +1369,9 @@ public abstract class Phone extends Handler implements PhoneInternalInterface {
      * automatic selection, all depending upon the value in the shared
      * preferences.
      */
-    private void restoreSavedNetworkSelection(Message response) {
+    // MTK-START: add-on
+    protected void restoreSavedNetworkSelection(Message response) {
+    // MTK-END
         // retrieve the operator
         OperatorInfo networkSelection = getSavedNetworkSelection();
 
@@ -1759,7 +1773,7 @@ public abstract class Phone extends Handler implements PhoneInternalInterface {
         return mVmCount != 0;
     }
 
-    private int getCallForwardingIndicatorFromSharedPref() {
+    protected int getCallForwardingIndicatorFromSharedPref() {
         int status = IccRecords.CALL_FORWARDING_STATUS_DISABLED;
         int subId = getSubId();
         if (SubscriptionManager.isValidSubscriptionId(subId)) {
@@ -1798,7 +1812,7 @@ public abstract class Phone extends Handler implements PhoneInternalInterface {
         return status;
     }
 
-    private void setCallForwardingIndicatorInSharedPref(boolean enable) {
+    protected void setCallForwardingIndicatorInSharedPref(boolean enable) {
         int status = enable ? IccRecords.CALL_FORWARDING_STATUS_ENABLED :
                 IccRecords.CALL_FORWARDING_STATUS_DISABLED;
         int subId = getSubId();
@@ -3092,7 +3106,7 @@ public abstract class Phone extends Handler implements PhoneInternalInterface {
     public void dispose() {
     }
 
-    private void updateImsPhone() {
+    protected void updateImsPhone() {
         Rlog.d(LOG_TAG, "updateImsPhone"
                 + " mImsServiceReady=" + mImsServiceReady);
 

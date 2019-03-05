@@ -25,7 +25,6 @@ import android.telephony.Rlog;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.io.IOException;
-import java.nio.channels.ClosedByInterruptException;
 import java.util.concurrent.CountDownLatch;
 
 public class ImsRttTextHandler extends Handler {
@@ -45,30 +44,30 @@ public class ImsRttTextHandler extends Handler {
     // Assuming that we do not exceed the rate limit, this is the maximum size we will allow
     // the buffer to grow to before sending as many as we can.
     public static final int MAX_BUFFERED_CHARACTER_COUNT = 5;
-    private static final int MILLIS_PER_SECOND = 1000;
+    public static final int MILLIS_PER_SECOND = 1000;
 
     // Messages for the handler.
     // Initializes the text handler. Should have an RttTextStream set in msg.obj
-    private static final int INITIALIZE = 1;
+    protected static final int INITIALIZE = 1;
     // Appends a string to the buffer to send to the network. Should have the string in msg.obj
-    private static final int APPEND_TO_NETWORK_BUFFER = 2;
+    protected static final int APPEND_TO_NETWORK_BUFFER = 2;
     // Send a string received from the network to the in-call app. Should have the string in
     // msg.obj.
-    private static final int SEND_TO_INCALL = 3;
+    public static final int SEND_TO_INCALL = 3;
     // Send as many characters as possible, as constrained by the rate limit. No extra data.
-    private static final int ATTEMPT_SEND_TO_NETWORK = 4;
+    public static final int ATTEMPT_SEND_TO_NETWORK = 4;
     // Indicates that N characters were sent a second ago and should be ignored by the rate
     // limiter. msg.arg1 should be set to N.
-    private static final int EXPIRE_SENT_CODEPOINT_COUNT = 5;
+    public static final int EXPIRE_SENT_CODEPOINT_COUNT = 5;
     // Indicates that the call is over and we should teardown everything we have set up.
-    private static final int TEARDOWN = 9999;
+    protected static final int TEARDOWN = 9999;
 
-    private Connection.RttTextStream mRttTextStream;
+    protected Connection.RttTextStream mRttTextStream;
     // For synchronization during testing
     private CountDownLatch mReadNotifier;
 
-    private class InCallReaderThread extends Thread {
-        private final Connection.RttTextStream mReaderThreadRttTextStream;
+    protected class InCallReaderThread extends Thread {
+        protected final Connection.RttTextStream mReaderThreadRttTextStream;
 
         public InCallReaderThread(Connection.RttTextStream textStream) {
             mReaderThreadRttTextStream = textStream;
@@ -80,16 +79,17 @@ public class ImsRttTextHandler extends Handler {
                 String charsReceived;
                 try {
                     charsReceived = mReaderThreadRttTextStream.read();
-                } catch (ClosedByInterruptException e) {
-                    Rlog.i(LOG_TAG, "RttReaderThread - Thread interrupted. Finishing.");
-                    break;
                 } catch (IOException e) {
                     Rlog.e(LOG_TAG, "RttReaderThread - IOException encountered " +
-                            "reading from in-call: ", e);
+                            "reading from in-call: %s", e);
                     obtainMessage(TEARDOWN).sendToTarget();
                     break;
                 }
                 if (charsReceived == null) {
+                    if (Thread.currentThread().isInterrupted()) {
+                        Rlog.i(LOG_TAG, "RttReaderThread - Thread interrupted. Finishing.");
+                        break;
+                    }
                     Rlog.e(LOG_TAG, "RttReaderThread - Stream closed unexpectedly. Attempt to " +
                             "reinitialize.");
                     obtainMessage(TEARDOWN).sendToTarget();
@@ -107,13 +107,13 @@ public class ImsRttTextHandler extends Handler {
         }
     }
 
-    private int mCodepointsAvailableForTransmission = MAX_CODEPOINTS_PER_SECOND;
-    private StringBuffer mBufferedTextToNetwork = new StringBuffer();
-    private InCallReaderThread mReaderThread;
+    public int mCodepointsAvailableForTransmission = MAX_CODEPOINTS_PER_SECOND;
+    public StringBuffer mBufferedTextToNetwork = new StringBuffer();
+    protected InCallReaderThread mReaderThread;
     // This is only ever used when the pipes fail and we have to re-setup. Messages received
     // from the network are buffered here until Telecom gets back to us with the new pipes.
     private StringBuffer mBufferedTextToIncall = new StringBuffer();
-    private final NetworkWriter mNetworkWriter;
+    public final NetworkWriter mNetworkWriter;
 
     @Override
     public void handleMessage(Message msg) {
@@ -145,7 +145,7 @@ public class ImsRttTextHandler extends Handler {
                 int numCodepointsBuffered = mBufferedTextToNetwork
                         .codePointCount(0, mBufferedTextToNetwork.length());
                 if (numCodepointsBuffered >= MAX_BUFFERED_CHARACTER_COUNT) {
-                    sendMessage(obtainMessage(ATTEMPT_SEND_TO_NETWORK));
+                    sendMessageAtFrontOfQueue(obtainMessage(ATTEMPT_SEND_TO_NETWORK));
                 } else {
                     sendEmptyMessageDelayed(
                             ATTEMPT_SEND_TO_NETWORK, MAX_BUFFERING_DELAY_MILLIS);
@@ -175,13 +175,12 @@ public class ImsRttTextHandler extends Handler {
             case EXPIRE_SENT_CODEPOINT_COUNT:
                 mCodepointsAvailableForTransmission += msg.arg1;
                 if (mCodepointsAvailableForTransmission > 0) {
-                    sendMessage(obtainMessage(ATTEMPT_SEND_TO_NETWORK));
+                    sendMessageAtFrontOfQueue(obtainMessage(ATTEMPT_SEND_TO_NETWORK));
                 }
                 break;
             case TEARDOWN:
                 try {
                     if (mReaderThread != null) {
-                        mReaderThread.interrupt();
                         mReaderThread.join(1000);
                     }
                 } catch (InterruptedException e) {
@@ -203,7 +202,6 @@ public class ImsRttTextHandler extends Handler {
     }
 
     public void initialize(Connection.RttTextStream rttTextStream) {
-        Rlog.i(LOG_TAG, "Initializing: " + this);
         obtainMessage(INITIALIZE, rttTextStream).sendToTarget();
     }
 

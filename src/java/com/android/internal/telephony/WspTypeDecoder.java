@@ -26,7 +26,10 @@ import java.util.HashMap;
 public class WspTypeDecoder {
 
     private static final int WAP_PDU_SHORT_LENGTH_MAX = 30;
-    private static final int WAP_PDU_LENGTH_QUOTE = 31;
+    // MTK-START
+    // Modification for sub class
+    protected static final int WAP_PDU_LENGTH_QUOTE = 31;
+    // MTK-END
 
     public static final int PDU_TYPE_PUSH = 0x06;
     public static final int PDU_TYPE_CONFIRMED_PUSH = 0x07;
@@ -196,10 +199,13 @@ public class WspTypeDecoder {
     public static final String CONTENT_TYPE_B_MMS = "application/vnd.wap.mms-message";
     public static final String CONTENT_TYPE_B_PUSH_SYNCML_NOTI = "application/vnd.syncml.notification";
 
-    byte[] mWspData;
-    int    mDataLength;
-    long   mUnsigned32bit;
-    String mStringValue;
+    // MTK-START
+    // Modification for sub class
+    protected byte[] mWspData;
+    protected int    mDataLength;
+    protected long   mUnsigned32bit;
+    protected String mStringValue;
+    // MTK-END
 
     HashMap<String, String> mContentParameters;
 

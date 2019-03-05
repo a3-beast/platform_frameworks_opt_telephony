@@ -29,7 +29,9 @@ import java.util.List;
  *
  * {@hide}
  */
+// MTK-START
 public class ComprehensionTlv {
+// MTK-END
     private static final String LOG_TAG = "ComprehensionTlv";
     private int mTag;
     private boolean mCr;

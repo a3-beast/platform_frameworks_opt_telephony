@@ -65,7 +65,7 @@ public class RadioResponse extends IRadioResponse.Stub {
 
     private static final int CDMA_BROADCAST_SMS_NO_OF_SERVICE_CATEGORIES = 31;
 
-    RIL mRil;
+    public RIL mRil;
 
     public RadioResponse(RIL ril) {
         mRil = ril;
@@ -76,7 +76,7 @@ public class RadioResponse extends IRadioResponse.Stub {
      * @param msg Response message to be sent
      * @param ret Return object to be included in the response message
      */
-    static void sendMessageResponse(Message msg, Object ret) {
+    public static void sendMessageResponse(Message msg, Object ret) {
         if (msg != null) {
             AsyncResult.forMessage(msg, ret, null);
             msg.sendToTarget();
@@ -1442,7 +1442,7 @@ public class RadioResponse extends IRadioResponse.Stub {
         }
     }
 
-    private void responseInts(RadioResponseInfo responseInfo, int ...var) {
+    public void responseInts(RadioResponseInfo responseInfo, int ...var) {
         final ArrayList<Integer> ints = new ArrayList<>();
         for (int i = 0; i < var.length; i++) {
             ints.add(var[i]);
@@ -1450,7 +1450,7 @@ public class RadioResponse extends IRadioResponse.Stub {
         responseIntArrayList(responseInfo, ints);
     }
 
-    private void responseIntArrayList(RadioResponseInfo responseInfo, ArrayList<Integer> var) {
+    public void responseIntArrayList(RadioResponseInfo responseInfo, ArrayList<Integer> var) {
         RILRequest rr = mRil.processResponse(responseInfo);
 
         if (rr != null) {
@@ -1626,7 +1626,7 @@ public class RadioResponse extends IRadioResponse.Stub {
     }
 
 
-    private void responseVoid(RadioResponseInfo responseInfo) {
+    public void responseVoid(RadioResponseInfo responseInfo) {
         RILRequest rr = mRil.processResponse(responseInfo);
 
         if (rr != null) {
@@ -1638,7 +1638,7 @@ public class RadioResponse extends IRadioResponse.Stub {
         }
     }
 
-    private void responseString(RadioResponseInfo responseInfo, String str) {
+    public void responseString(RadioResponseInfo responseInfo, String str) {
         RILRequest rr = mRil.processResponse(responseInfo);
 
         if (rr != null) {
@@ -1649,7 +1649,7 @@ public class RadioResponse extends IRadioResponse.Stub {
         }
     }
 
-    private void responseStrings(RadioResponseInfo responseInfo, String ...str) {
+    public void responseStrings(RadioResponseInfo responseInfo, String ...str) {
         ArrayList<String> strings = new ArrayList<>();
         for (int i = 0; i < str.length; i++) {
             strings.add(str[i]);
@@ -1657,7 +1657,7 @@ public class RadioResponse extends IRadioResponse.Stub {
         responseStringArrayList(mRil, responseInfo, strings);
     }
 
-    static void responseStringArrayList(RIL ril, RadioResponseInfo responseInfo,
+    public static void responseStringArrayList(RIL ril, RadioResponseInfo responseInfo,
                                         ArrayList<String> strings) {
         RILRequest rr = ril.processResponse(responseInfo);
 
@@ -1775,7 +1775,7 @@ public class RadioResponse extends IRadioResponse.Stub {
         }
     }
 
-    private static String convertOpertatorInfoToString(int status) {
+    public static String convertOpertatorInfoToString(int status) {
         if (status == android.hardware.radio.V1_0.OperatorStatus.UNKNOWN) {
             return "unknown";
         } else if (status == android.hardware.radio.V1_0.OperatorStatus.AVAILABLE) {
@@ -1943,7 +1943,7 @@ public class RadioResponse extends IRadioResponse.Stub {
         }
     }
 
-    private void responseCellInfoList_1_2(
+    public void responseCellInfoList_1_2(
             RadioResponseInfo responseInfo,
             ArrayList<android.hardware.radio.V1_2.CellInfo> cellInfo) {
         RILRequest rr = mRil.processResponse(responseInfo);
@@ -1989,7 +1989,7 @@ public class RadioResponse extends IRadioResponse.Stub {
         RILRequest rr = mRil.processResponse(responseInfo);
 
         if (rr != null) {
-            ArrayList<HardwareConfig> ret = RIL.convertHalHwConfigList(config, mRil);
+            ArrayList<HardwareConfig> ret = mRil.convertHalHwConfigList(config, mRil);
             if (responseInfo.error == RadioError.NONE) {
                 sendMessageResponse(rr.mResult, ret);
             }

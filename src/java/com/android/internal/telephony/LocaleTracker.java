@@ -30,6 +30,7 @@ import android.os.AsyncResult;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
+import android.os.storage.StorageManager;
 import android.telephony.CellInfo;
 import android.telephony.CellInfoGsm;
 import android.telephony.CellInfoLte;
@@ -408,8 +409,18 @@ public class LocaleTracker extends Handler {
             // Set the country code for wifi. This sets allowed wifi channels based on the
             // country of the carrier we see. If we can't see any, reset to 0 so we don't
             // broadcast on forbidden channels.
-            ((WifiManager) mPhone.getContext().getSystemService(Context.WIFI_SERVICE))
-                    .setCountryCode(countryIso);
+            // ((WifiManager) mPhone.getContext().getSystemService(Context.WIFI_SERVICE))
+            //         .setCountryCode(countryIso);
+            // M: AOSP misses the NULL check of WifiManager, and the result is JE.
+            if (!StorageManager.inCryptKeeperBounce()) {
+                WifiManager wm =
+                        (WifiManager)mPhone.getContext().getSystemService(Context.WIFI_SERVICE);
+                if (wm == null) {
+                    loge("WifiManager is null");
+                } else {
+                    wm.setCountryCode(countryIso);
+                }
+            }
         }
     }
 

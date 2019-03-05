@@ -50,24 +50,24 @@ public class CellularNetworkService extends NetworkService {
 
     private static final String TAG = CellularNetworkService.class.getSimpleName();
 
-    private static final int GET_CS_REGISTRATION_STATE_DONE = 1;
-    private static final int GET_PS_REGISTRATION_STATE_DONE = 2;
-    private static final int NETWORK_REGISTRATION_STATE_CHANGED = 3;
+    protected static final int GET_CS_REGISTRATION_STATE_DONE = 1;
+    protected static final int GET_PS_REGISTRATION_STATE_DONE = 2;
+    protected static final int NETWORK_REGISTRATION_STATE_CHANGED = 3;
 
-    private class CellularNetworkServiceProvider extends NetworkServiceProvider {
+    public class CellularNetworkServiceProvider extends NetworkServiceProvider {
 
-        private final ConcurrentHashMap<Message, NetworkServiceCallback> mCallbackMap =
+        protected final ConcurrentHashMap<Message, NetworkServiceCallback> mCallbackMap =
                 new ConcurrentHashMap<>();
 
         private final Looper mLooper;
 
         private final HandlerThread mHandlerThread;
 
-        private final Handler mHandler;
+        protected final Handler mHandler;
 
-        private final Phone mPhone;
+        protected final Phone mPhone;
 
-        CellularNetworkServiceProvider(int slotId) {
+        protected CellularNetworkServiceProvider(int slotId) {
             super(slotId);
 
             mPhone = PhoneFactory.getPhone(getSlotId());
@@ -124,7 +124,7 @@ public class CellularNetworkService extends NetworkService {
                     mHandler, NETWORK_REGISTRATION_STATE_CHANGED, null);
         }
 
-        private int getRegStateFromHalRegState(int halRegState) {
+        protected int getRegStateFromHalRegState(int halRegState) {
             switch (halRegState) {
                 case RegState.NOT_REG_MT_NOT_SEARCHING_OP:
                 case RegState.NOT_REG_MT_NOT_SEARCHING_OP_EM:
@@ -147,7 +147,7 @@ public class CellularNetworkService extends NetworkService {
             }
         }
 
-        private boolean isEmergencyOnly(int halRegState) {
+        protected boolean isEmergencyOnly(int halRegState) {
             switch (halRegState) {
                 case RegState.NOT_REG_MT_NOT_SEARCHING_OP_EM:
                 case RegState.NOT_REG_MT_SEARCHING_OP_EM:
@@ -165,7 +165,7 @@ public class CellularNetworkService extends NetworkService {
             }
         }
 
-        private int[] getAvailableServices(int regState, int domain, boolean emergencyOnly) {
+        protected int[] getAvailableServices(int regState, int domain, boolean emergencyOnly) {
             int[] availableServices = null;
 
             // In emergency only states, only SERVICE_TYPE_EMERGENCY is available.
@@ -189,11 +189,11 @@ public class CellularNetworkService extends NetworkService {
             return availableServices;
         }
 
-        private int getAccessNetworkTechnologyFromRat(int rilRat) {
+        protected int getAccessNetworkTechnologyFromRat(int rilRat) {
             return ServiceState.rilRadioTechnologyToNetworkType(rilRat);
         }
 
-        private NetworkRegistrationState getRegistrationStateFromResult(Object result, int domain) {
+        protected NetworkRegistrationState getRegistrationStateFromResult(Object result, int domain) {
             if (result == null) {
                 return null;
             }
@@ -208,7 +208,7 @@ public class CellularNetworkService extends NetworkService {
             }
         }
 
-        private NetworkRegistrationState createRegistrationStateFromVoiceRegState(Object result) {
+        protected NetworkRegistrationState createRegistrationStateFromVoiceRegState(Object result) {
             int transportType = TransportType.WWAN;
             int domain = NetworkRegistrationState.DOMAIN_CS;
 
@@ -257,7 +257,7 @@ public class CellularNetworkService extends NetworkService {
             return null;
         }
 
-        private NetworkRegistrationState createRegistrationStateFromDataRegState(Object result) {
+        protected NetworkRegistrationState createRegistrationStateFromDataRegState(Object result) {
             int transportType = TransportType.WWAN;
             int domain = NetworkRegistrationState.DOMAIN_PS;
 
@@ -296,7 +296,7 @@ public class CellularNetworkService extends NetworkService {
             return null;
         }
 
-        private CellIdentity convertHalCellIdentityToCellIdentity(
+        protected CellIdentity convertHalCellIdentityToCellIdentity(
                 android.hardware.radio.V1_0.CellIdentity cellIdentity) {
             if (cellIdentity == null) {
                 return null;
@@ -364,7 +364,7 @@ public class CellularNetworkService extends NetworkService {
             return result;
         }
 
-        private CellIdentity convertHalCellIdentityToCellIdentity(
+        protected CellIdentity convertHalCellIdentityToCellIdentity(
                 android.hardware.radio.V1_2.CellIdentity cellIdentity) {
             if (cellIdentity == null) {
                 return null;

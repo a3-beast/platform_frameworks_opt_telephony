@@ -35,20 +35,35 @@ public class InboundSmsTracker {
     // Fields for single and multi-part messages
     private final byte[] mPdu;
     private final long mTimestamp;
-    private final int mDestPort;
+    // MTK-START
+    // Modification for sub class
+    protected final int mDestPort;
+    // MTK-END
     private final boolean mIs3gpp2;
-    private final boolean mIs3gpp2WapPdu;
+    // MTK-START
+    // Modification for sub class
+    protected final boolean mIs3gpp2WapPdu;
+    // MTK-END
     private final String mMessageBody;
 
     // Fields for concatenating multi-part SMS messages
-    private final String mAddress;
-    private final int mReferenceNumber;
+    // MTK-START
+    // Modification for sub class
+    protected final String mAddress;
+    protected final int mReferenceNumber;
+    // MTK-END
     private final int mSequenceNumber;
-    private final int mMessageCount;
+    // MTK-START
+    // Modification for sub class
+    protected final int mMessageCount;
+    // MTK-END
 
     // Fields for deleting this message after delivery
-    private String mDeleteWhere;
-    private String[] mDeleteWhereArgs;
+    // MTK-START
+    // Modification for sub class
+    protected String mDeleteWhere;
+    protected String[] mDeleteWhereArgs;
+    // MTK-END
 
     /**
      * Copied from SmsMessageBase#getDisplayOriginatingAddress used for blocking messages.
@@ -65,7 +80,7 @@ public class InboundSmsTracker {
     public static final int DEST_PORT_FLAG_NO_PORT = (1 << 16);
 
     /** Destination port flag bit to indicate 3GPP format message. */
-    private static final int DEST_PORT_FLAG_3GPP = (1 << 17);
+    public static final int DEST_PORT_FLAG_3GPP = (1 << 17);
 
     @VisibleForTesting
     /** Destination port flag bit to indicate 3GPP2 format message. */

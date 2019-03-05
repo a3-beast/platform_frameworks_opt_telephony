@@ -99,7 +99,9 @@ public class UiccCarrierPrivilegeRules extends Handler {
     private static final String TAG_AID_REF_DO = "4F";
     private static final String CARRIER_PRIVILEGE_AID = "FFFFFFFFFFFF";
 
-    private static final int EVENT_OPEN_LOGICAL_CHANNEL_DONE = 1;
+    // MTK-START: add on
+    protected static final int EVENT_OPEN_LOGICAL_CHANNEL_DONE = 1;
+    // MTK-END
     private static final int EVENT_TRANSMIT_LOGICAL_CHANNEL_DONE = 2;
     private static final int EVENT_CLOSE_LOGICAL_CHANNEL_DONE = 3;
     private static final int EVENT_PKCS15_READ_DONE = 4;
@@ -107,7 +109,9 @@ public class UiccCarrierPrivilegeRules extends Handler {
     // State of the object.
     private static final int STATE_LOADING  = 0;
     private static final int STATE_LOADED   = 1;
-    private static final int STATE_ERROR    = 2;
+    // MTK-START: add on
+    protected static final int STATE_ERROR    = 2;
+    // MTK-END
 
     // Max number of retries for open logical channel, interval is 10s.
     private static final int MAX_RETRY = 1;
@@ -310,8 +314,7 @@ public class UiccCarrierPrivilegeRules extends Handler {
             // gained carrier privileges (as an indication that a matching SIM has been inserted).
             PackageInfo pInfo = packageManager.getPackageInfo(packageName,
                     PackageManager.GET_SIGNATURES
-                            | PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS
-                            | PackageManager.MATCH_HIDDEN_UNTIL_INSTALLED_COMPONENTS);
+                            | PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS);
             return getCarrierPrivilegeStatus(pInfo);
         } catch (PackageManager.NameNotFoundException ex) {
             log("Package " + packageName + " not found for carrier privilege status check");
@@ -661,7 +664,9 @@ public class UiccCarrierPrivilegeRules extends Handler {
     /*
      * Updates the state and notifies the UiccCard that the rules have finished loading.
      */
-    private void updateState(int newState, String statusMessage) {
+    // MTK-START: add on
+    protected void updateState(int newState, String statusMessage) {
+    // MTK-END
         mState.set(newState);
         if (mLoadedCallback != null) {
             mLoadedCallback.sendToTarget();
@@ -670,7 +675,9 @@ public class UiccCarrierPrivilegeRules extends Handler {
         mStatusMessage = statusMessage;
     }
 
-    private static void log(String msg) {
+    // MTK-START: add on
+    protected static void log(String msg) {
+    // MTK-END
         if (DBG) Rlog.d(LOG_TAG, msg);
     }
 

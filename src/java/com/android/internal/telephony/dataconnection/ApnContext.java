@@ -21,6 +21,7 @@ import android.net.ConnectivityManager;
 import android.net.NetworkCapabilities;
 import android.net.NetworkConfig;
 import android.net.NetworkRequest;
+import android.os.Bundle;
 import android.telephony.Rlog;
 import android.text.TextUtils;
 import android.util.LocalLog;
@@ -31,10 +32,12 @@ import com.android.internal.telephony.DctConstants;
 import com.android.internal.telephony.Phone;
 import com.android.internal.telephony.PhoneConstants;
 import com.android.internal.telephony.RetryManager;
+import com.android.internal.telephony.TelephonyComponentFactory;
 import com.android.internal.util.IndentingPrintWriter;
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -52,7 +55,7 @@ public class ApnContext {
 
     private final Phone mPhone;
 
-    private final String mApnType;
+    protected final String mApnType;
 
     private DctConstants.State mState;
 
@@ -79,7 +82,7 @@ public class ApnContext {
      */
     AtomicBoolean mDependencyMet;
 
-    private final DcTracker mDcTracker;
+    protected final DcTracker mDcTracker;
 
     /**
      * Remember this as a change in this value to a more permissive state
@@ -96,7 +99,47 @@ public class ApnContext {
     /**
      * Retry manager that handles the APN retry and delays.
      */
-    private final RetryManager mRetryManager;
+    protected final RetryManager mRetryManager;
+
+    /**
+     * Static methods used for MTK add-on reflections
+     */
+    private static Method sMethodApnIdForTypeEx;
+    private static Method sMethodApnIdForNetworkRequestEx;
+    private static Method sMethodApnIdForApnNameEx;
+    static {
+        Class<?> clz = null;
+        try {
+            clz = Class.forName("com.mediatek.internal.telephony.dataconnection."
+                    + "MtkApnContext");
+        } catch (Exception e) {
+            Rlog.d(SLOG_TAG, e.toString());
+        }
+
+        if (clz != null) {
+            try {
+                sMethodApnIdForTypeEx = clz.getDeclaredMethod("apnIdForTypeEx", int.class);
+                sMethodApnIdForTypeEx.setAccessible(true);
+            } catch (Exception e) {
+                Rlog.d(SLOG_TAG, e.toString());
+            }
+
+            try{
+                sMethodApnIdForNetworkRequestEx = clz.getDeclaredMethod("apnIdForNetworkRequestEx",
+                        NetworkCapabilities.class, int.class, boolean.class);
+                sMethodApnIdForNetworkRequestEx.setAccessible(true);
+            } catch (Exception e) {
+                Rlog.d(SLOG_TAG, e.toString());
+            }
+
+            try {
+                sMethodApnIdForApnNameEx = clz.getDeclaredMethod("apnIdForApnNameEx", String.class);
+                sMethodApnIdForApnNameEx.setAccessible(true);
+            } catch (Exception e) {
+                Rlog.d(SLOG_TAG, e.toString());
+            }
+        }
+    }
 
     /**
      * AonContext constructor
@@ -117,7 +160,11 @@ public class ApnContext {
         priority = config.priority;
         LOG_TAG = logTag;
         mDcTracker = tracker;
-        mRetryManager = new RetryManager(phone, apnType);
+        // M: for telephony add-on
+        // Data Framework - Data Retry enhancement
+        TelephonyComponentFactory telephonyComponentFactory
+                = TelephonyComponentFactory.getInstance();
+        mRetryManager = telephonyComponentFactory.makeRetryManager(phone, apnType);
     }
 
     /**
@@ -561,6 +608,15 @@ public class ApnContext {
         case ConnectivityManager.TYPE_MOBILE_EMERGENCY:
             return DctConstants.APN_EMERGENCY_ID;
         default:
+            /// M: reflection for telephony add-on @{
+            try {
+                if (sMethodApnIdForTypeEx != null) {
+                    return (int) sMethodApnIdForTypeEx.invoke(null, networkType);
+                }
+            } catch (Exception e) {
+                Rlog.d(SLOG_TAG, e.toString());
+            }
+            /// @}
             return DctConstants.APN_INVALID_ID;
         }
     }
@@ -623,6 +679,17 @@ public class ApnContext {
             if (apnId != DctConstants.APN_INVALID_ID) error = true;
             apnId = DctConstants.APN_EMERGENCY_ID;
         }
+        /// M: reflection for telephony add-on @{
+        try {
+            if (sMethodApnIdForNetworkRequestEx != null) {
+                Bundle b = (Bundle) sMethodApnIdForNetworkRequestEx.invoke(null, nc, apnId, error);
+                apnId = b.getInt("apnId");
+                error = b.getBoolean("error");
+            }
+        } catch (Exception e) {
+            Rlog.d(SLOG_TAG, e.toString());
+        }
+        /// @}
         if (error) {
             // TODO: If this error condition is removed, the framework's handling of
             // NET_CAPABILITY_NOT_RESTRICTED will need to be updated so requests for
@@ -660,6 +727,15 @@ public class ApnContext {
             case PhoneConstants.APN_TYPE_EMERGENCY:
                 return DctConstants.APN_EMERGENCY_ID;
             default:
+                /// M: reflection for telephony add-on @{
+                try {
+                    if (sMethodApnIdForApnNameEx != null) {
+                        return (int) sMethodApnIdForApnNameEx.invoke(null, type);
+                    }
+                } catch (Exception e) {
+                    Rlog.d(SLOG_TAG, e.toString());
+                }
+                /// @}
                 return DctConstants.APN_INVALID_ID;
         }
     }
@@ -701,7 +777,7 @@ public class ApnContext {
                 mDependencyMet + "}";
     }
 
-    private void log(String s) {
+    protected void log(String s) {
         Rlog.d(LOG_TAG, "[ApnContext:" + mApnType + "] " + s);
     }
 

@@ -44,6 +44,10 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
+// MTK-START: add-on
+import com.android.internal.telephony.TelephonyComponentFactory;
+// MTK-END
+
 /**
  * This class is responsible for keeping all knowledge about
  * Universal Integrated Circuit Card (UICC), also know as SIM's,
@@ -90,8 +94,10 @@ import java.util.Set;
  * See also {@link com.android.internal.telephony.IccCard}
  */
 public class UiccController extends Handler {
-    private static final boolean DBG = true;
-    private static final boolean VDBG = false; //STOPSHIP if true
+    // MTK-START: add-on
+    protected static final boolean DBG = true;
+    protected static final boolean VDBG = false; //STOPSHIP if true
+    // MTK-END
     private static final String LOG_TAG = "UiccController";
 
     public static final int INVALID_SLOT_ID = -1;
@@ -100,31 +106,43 @@ public class UiccController extends Handler {
     public static final int APP_FAM_3GPP2 = 2;
     public static final int APP_FAM_IMS   = 3;
 
-    private static final int EVENT_ICC_STATUS_CHANGED = 1;
+    // MTK-START: add-on
+    protected static final int EVENT_ICC_STATUS_CHANGED = 1;
+    // MTK-END
     private static final int EVENT_SLOT_STATUS_CHANGED = 2;
-    private static final int EVENT_GET_ICC_STATUS_DONE = 3;
-    private static final int EVENT_GET_SLOT_STATUS_DONE = 4;
-    private static final int EVENT_RADIO_ON = 5;
-    private static final int EVENT_RADIO_AVAILABLE = 6;
+    // MTK-START: add-on
+    protected static final int EVENT_GET_ICC_STATUS_DONE = 3;
+    protected static final int EVENT_GET_SLOT_STATUS_DONE = 4;
+    protected static final int EVENT_RADIO_ON = 5;
+    protected static final int EVENT_RADIO_AVAILABLE = 6;
+    // MTK-END
     private static final int EVENT_RADIO_UNAVAILABLE = 7;
     private static final int EVENT_SIM_REFRESH = 8;
 
     // this needs to be here, because on bootup we dont know which index maps to which UiccSlot
-    private CommandsInterface[] mCis;
+    // MTK-START: add-on
+    protected CommandsInterface[] mCis;
+    // MTK-END
     private UiccSlot[] mUiccSlots;
     private int[] mPhoneIdToSlotId;
     private boolean mIsSlotStatusSupported = true;
 
-    private static final Object mLock = new Object();
+    // MTK-START: add-on
+    protected static final Object mLock = new Object();
+    // MTK-END
     private static UiccController mInstance;
     private static ArrayList<IccSlotStatus> sLastSlotStatus;
 
-    private Context mContext;
+    // MTK-START: add-on
+    protected Context mContext;
+    // MTK-END
 
     protected RegistrantList mIccChangedRegistrants = new RegistrantList();
 
     private UiccStateChangedLauncher mLauncher;
-    private RadioConfig mRadioConfig;
+    // MTK-START: add-on
+    protected RadioConfig mRadioConfig;
+    // MTK-END
 
     // LocalLog buffer to hold important SIM related events for debugging
     static LocalLog sLocalLog = new LocalLog(100);
@@ -134,12 +152,19 @@ public class UiccController extends Handler {
             if (mInstance != null) {
                 throw new RuntimeException("UiccController.make() should only be called once");
             }
-            mInstance = new UiccController(c, ci);
+            // MTK-START: add-on
+            TelephonyComponentFactory telephonyComponentFactory
+                    = TelephonyComponentFactory.getInstance();
+            mInstance = telephonyComponentFactory.makeUiccController(c, ci);
+            //mInstance = new UiccController(c, ci);
+            // MTK-END
             return mInstance;
         }
     }
 
-    private UiccController(Context c, CommandsInterface []ci) {
+    // MTK-START: add-on
+    public UiccController(Context c, CommandsInterface []ci) {
+    // MTK-END
         if (DBG) log("Creating UiccController");
         mContext = c;
         mCis = ci;
@@ -430,7 +455,9 @@ public class UiccController extends Handler {
         }
     }
 
-    private Integer getCiIndex(Message msg) {
+    // MTK-START: add-on
+    protected Integer getCiIndex(Message msg) {
+    // MTK-END
         AsyncResult ar;
         Integer index = new Integer(PhoneConstants.DEFAULT_CARD_INDEX);
 
@@ -463,7 +490,9 @@ public class UiccController extends Handler {
         }
     }
 
-    static void updateInternalIccState(String value, String reason, int phoneId) {
+    // MTK-START: add on
+    static public void updateInternalIccState(String value, String reason, int phoneId) {
+    // MTK-END
         SubscriptionInfoUpdater subInfoUpdator = PhoneFactory.getSubscriptionInfoUpdater();
         if (subInfoUpdator != null) {
             subInfoUpdator.updateInternalIccState(value, reason, phoneId);
@@ -472,7 +501,9 @@ public class UiccController extends Handler {
         }
     }
 
-    private synchronized void onGetIccCardStatusDone(AsyncResult ar, Integer index) {
+    // MTK-START: add on
+    protected synchronized void onGetIccCardStatusDone(AsyncResult ar, Integer index) {
+    // MTK-END
         if (ar.exception != null) {
             Rlog.e(LOG_TAG,"Error getting ICC status. "
                     + "RIL_REQUEST_GET_ICC_STATUS should "
@@ -642,17 +673,14 @@ public class UiccController extends Handler {
 
         boolean changed = false;
         switch(resp.refreshResult) {
-            // Reset the required apps when we know about the refresh so that
-            // anyone interested does not get stale state.
             case IccRefreshResponse.REFRESH_RESULT_RESET:
-                changed = uiccCard.resetAppWithAid(resp.aid, true /* disposeCatService */);
-                break;
             case IccRefreshResponse.REFRESH_RESULT_INIT:
-                // don't dispose CatService on SIM REFRESH of type INIT
-                changed = uiccCard.resetAppWithAid(resp.aid, false /* disposeCatService */);
-                break;
+                 // Reset the required apps when we know about the refresh so that
+                 // anyone interested does not get stale state.
+                 changed = uiccCard.resetAppWithAid(resp.aid);
+                 break;
             default:
-                return;
+                 return;
         }
 
         if (changed && resp.refreshResult == IccRefreshResponse.REFRESH_RESULT_RESET) {
@@ -677,7 +705,9 @@ public class UiccController extends Handler {
         return (index >= 0 && index < TelephonyManager.getDefault().getPhoneCount());
     }
 
-    private boolean isValidSlotIndex(int index) {
+    // MTK-START: add on
+    protected boolean isValidSlotIndex(int index) {
+    // MTK-END
         return (index >= 0 && index < mUiccSlots.length);
     }
 

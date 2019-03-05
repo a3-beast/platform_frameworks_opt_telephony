@@ -64,6 +64,7 @@ import com.android.internal.telephony.PhoneConstants;
 import com.android.internal.telephony.RILConstants;
 import com.android.internal.telephony.RetryManager;
 import com.android.internal.telephony.ServiceStateTracker;
+import com.android.internal.telephony.TelephonyComponentFactory;
 import com.android.internal.telephony.TelephonyIntents;
 import com.android.internal.telephony.metrics.TelephonyMetrics;
 import com.android.internal.util.AsyncChannel;
@@ -98,19 +99,19 @@ public class DataConnection extends StateMachine {
     private static final boolean DBG = true;
     private static final boolean VDBG = true;
 
-    private static final String NETWORK_TYPE = "MOBILE";
+    protected static final String NETWORK_TYPE = "MOBILE";
 
     // The data connection controller
-    private DcController mDcController;
+    protected DcController mDcController;
 
     // The Tester for failing all bringup's
-    private DcTesterFailBringUpAll mDcTesterFailBringUpAll;
+    protected DcTesterFailBringUpAll mDcTesterFailBringUpAll;
 
-    private static AtomicInteger mInstanceNumber = new AtomicInteger(0);
-    private AsyncChannel mAc;
+    protected static AtomicInteger mInstanceNumber = new AtomicInteger(0);
+    protected AsyncChannel mAc;
 
     // The DCT that's talking to us, we only support one!
-    private DcTracker mDct = null;
+    protected DcTracker mDct = null;
 
     protected String[] mPcscfAddr;
 
@@ -118,13 +119,13 @@ public class DataConnection extends StateMachine {
      * Used internally for saving connecting parameters.
      */
     public static class ConnectionParams {
-        int mTag;
-        ApnContext mApnContext;
-        int mProfileId;
-        int mRilRat;
-        final boolean mUnmeteredUseOnly;
-        Message mOnCompletedMsg;
-        final int mConnectionGeneration;
+        public int mTag;
+        public ApnContext mApnContext;
+        public int mProfileId;
+        public int mRilRat;
+        public final boolean mUnmeteredUseOnly;
+        public Message mOnCompletedMsg;
+        public final int mConnectionGeneration;
 
         ConnectionParams(ApnContext apnContext, int profileId, int rilRadioTechnology,
                          boolean unmeteredUseOnly,  Message onCompletedMsg,
@@ -151,12 +152,12 @@ public class DataConnection extends StateMachine {
      * Used internally for saving disconnecting parameters.
      */
     public static class DisconnectParams {
-        int mTag;
+        public int mTag;
         public ApnContext mApnContext;
-        String mReason;
-        Message mOnCompletedMsg;
+        public String mReason;
+        public Message mOnCompletedMsg;
 
-        DisconnectParams(ApnContext apnContext, String reason, Message onCompletedMsg) {
+        public DisconnectParams(ApnContext apnContext, String reason, Message onCompletedMsg) {
             mApnContext = apnContext;
             mReason = reason;
             mOnCompletedMsg = onCompletedMsg;
@@ -170,61 +171,61 @@ public class DataConnection extends StateMachine {
         }
     }
 
-    private ApnSetting mApnSetting;
-    private ConnectionParams mConnectionParams;
-    private DisconnectParams mDisconnectParams;
-    private DcFailCause mDcFailCause;
+    protected ApnSetting mApnSetting;
+    protected ConnectionParams mConnectionParams;
+    protected DisconnectParams mDisconnectParams;
+    protected DcFailCause mDcFailCause;
 
-    private Phone mPhone;
-    private DataServiceManager mDataServiceManager;
-    private LinkProperties mLinkProperties = new LinkProperties();
-    private long mCreateTime;
-    private long mLastFailTime;
-    private DcFailCause mLastFailCause;
+    protected Phone mPhone;
+    protected DataServiceManager mDataServiceManager;
+    protected LinkProperties mLinkProperties = new LinkProperties();
+    protected long mCreateTime;
+    protected long mLastFailTime;
+    protected DcFailCause mLastFailCause;
     private static final String NULL_IP = "0.0.0.0";
-    private Object mUserData;
-    private int mSubscriptionOverride;
-    private int mRilRat = Integer.MAX_VALUE;
-    private int mDataRegState = Integer.MAX_VALUE;
-    private NetworkInfo mNetworkInfo;
-    private DcNetworkAgent mNetworkAgent;
+    protected Object mUserData;
+    protected int mSubscriptionOverride;
+    protected int mRilRat = Integer.MAX_VALUE;
+    protected int mDataRegState = Integer.MAX_VALUE;
+    protected NetworkInfo mNetworkInfo;
+    protected DcNetworkAgent mNetworkAgent;
     private LocalLog mNetCapsLocalLog = new LocalLog(50);
 
-    int mTag;
+    public int mTag;
     public int mCid;
     public HashMap<ApnContext, ConnectionParams> mApnContexts = null;
-    PendingIntent mReconnectIntent = null;
+    protected PendingIntent mReconnectIntent = null;
 
 
     // ***** Event codes for driving the state machine, package visible for Dcc
-    static final int BASE = Protocol.BASE_DATA_CONNECTION;
-    static final int EVENT_CONNECT = BASE + 0;
-    static final int EVENT_SETUP_DATA_CONNECTION_DONE = BASE + 1;
-    static final int EVENT_DEACTIVATE_DONE = BASE + 3;
-    static final int EVENT_DISCONNECT = BASE + 4;
-    static final int EVENT_RIL_CONNECTED = BASE + 5;
-    static final int EVENT_DISCONNECT_ALL = BASE + 6;
-    static final int EVENT_DATA_STATE_CHANGED = BASE + 7;
-    static final int EVENT_TEAR_DOWN_NOW = BASE + 8;
-    static final int EVENT_LOST_CONNECTION = BASE + 9;
-    static final int EVENT_DATA_CONNECTION_DRS_OR_RAT_CHANGED = BASE + 11;
-    static final int EVENT_DATA_CONNECTION_ROAM_ON = BASE + 12;
-    static final int EVENT_DATA_CONNECTION_ROAM_OFF = BASE + 13;
-    static final int EVENT_BW_REFRESH_RESPONSE = BASE + 14;
-    static final int EVENT_DATA_CONNECTION_VOICE_CALL_STARTED = BASE + 15;
-    static final int EVENT_DATA_CONNECTION_VOICE_CALL_ENDED = BASE + 16;
-    static final int EVENT_DATA_CONNECTION_OVERRIDE_CHANGED = BASE + 17;
-    static final int EVENT_KEEPALIVE_STATUS = BASE + 18;
-    static final int EVENT_KEEPALIVE_STARTED = BASE + 19;
-    static final int EVENT_KEEPALIVE_STOPPED = BASE + 20;
-    static final int EVENT_KEEPALIVE_START_REQUEST = BASE + 21;
-    static final int EVENT_KEEPALIVE_STOP_REQUEST = BASE + 22;
-    static final int EVENT_LINK_CAPACITY_CHANGED = BASE + 23;
+    protected static final int BASE = Protocol.BASE_DATA_CONNECTION;
+    protected static final int EVENT_CONNECT = BASE + 0;
+    protected static final int EVENT_SETUP_DATA_CONNECTION_DONE = BASE + 1;
+    protected static final int EVENT_DEACTIVATE_DONE = BASE + 3;
+    protected static final int EVENT_DISCONNECT = BASE + 4;
+    public static final int EVENT_RIL_CONNECTED = BASE + 5;
+    protected static final int EVENT_DISCONNECT_ALL = BASE + 6;
+    public static final int EVENT_DATA_STATE_CHANGED = BASE + 7;
+    protected static final int EVENT_TEAR_DOWN_NOW = BASE + 8;
+    public static final int EVENT_LOST_CONNECTION = BASE + 9;
+    protected static final int EVENT_DATA_CONNECTION_DRS_OR_RAT_CHANGED = BASE + 11;
+    protected static final int EVENT_DATA_CONNECTION_ROAM_ON = BASE + 12;
+    protected static final int EVENT_DATA_CONNECTION_ROAM_OFF = BASE + 13;
+    protected static final int EVENT_BW_REFRESH_RESPONSE = BASE + 14;
+    protected static final int EVENT_DATA_CONNECTION_VOICE_CALL_STARTED = BASE + 15;
+    protected static final int EVENT_DATA_CONNECTION_VOICE_CALL_ENDED = BASE + 16;
+    protected static final int EVENT_DATA_CONNECTION_OVERRIDE_CHANGED = BASE + 17;
+    protected static final int EVENT_KEEPALIVE_STATUS = BASE + 18;
+    protected static final int EVENT_KEEPALIVE_STARTED = BASE + 19;
+    protected static final int EVENT_KEEPALIVE_STOPPED = BASE + 20;
+    protected static final int EVENT_KEEPALIVE_START_REQUEST = BASE + 21;
+    protected static final int EVENT_KEEPALIVE_STOP_REQUEST = BASE + 22;
+    protected static final int EVENT_LINK_CAPACITY_CHANGED = BASE + 23;
 
-    private static final int CMD_TO_STRING_COUNT =
+    protected static final int CMD_TO_STRING_COUNT =
             EVENT_LINK_CAPACITY_CHANGED - BASE + 1;
 
-    private static String[] sCmdToString = new String[CMD_TO_STRING_COUNT];
+    protected static String[] sCmdToString = new String[CMD_TO_STRING_COUNT];
     static {
         sCmdToString[EVENT_CONNECT - BASE] = "EVENT_CONNECT";
         sCmdToString[EVENT_SETUP_DATA_CONNECTION_DONE - BASE] =
@@ -255,7 +256,7 @@ public class DataConnection extends StateMachine {
         sCmdToString[EVENT_LINK_CAPACITY_CHANGED - BASE] = "EVENT_LINK_CAPACITY_CHANGED";
     }
     // Convert cmd to string or null if unknown
-    static String cmdToString(int cmd) {
+    protected static String cmdToString(int cmd) {
         String value;
         cmd -= BASE;
         if ((cmd >= 0) && (cmd < sCmdToString.length)) {
@@ -280,9 +281,13 @@ public class DataConnection extends StateMachine {
                                                     DataServiceManager dataServiceManager,
                                                     DcTesterFailBringUpAll failBringUpAll,
                                                     DcController dcc) {
-        DataConnection dc = new DataConnection(phone,
+        /// M: for telephony add-on @{
+        TelephonyComponentFactory telephonyComponentFactory
+                = TelephonyComponentFactory.getInstance();
+        DataConnection dc = telephonyComponentFactory.makeDataConnection(phone,
                 "DC-" + mInstanceNumber.incrementAndGet(), id, dct, dataServiceManager,
                 failBringUpAll, dcc);
+        /// @}
         dc.start();
         if (DBG) dc.log("Made " + dc.getName());
         return dc;
@@ -323,7 +328,7 @@ public class DataConnection extends StateMachine {
         return mApnSetting;
     }
 
-    void setLinkPropertiesHttpProxy(ProxyInfo proxy) {
+    public void setLinkPropertiesHttpProxy(ProxyInfo proxy) {
         mLinkProperties.setHttpProxy(proxy);
     }
 
@@ -423,7 +428,10 @@ public class DataConnection extends StateMachine {
 
         if (result.newLp.equals(result.oldLp) == false &&
                 mNetworkAgent != null) {
-            mNetworkAgent.sendLinkProperties(mLinkProperties);
+            /// M: Mediatek override link properites @{
+            mNetworkAgent.sendLinkProperties(mtkGetLinkProperties());
+            /// @}
+            // mNetworkAgent.sendLinkProperties(mLinkProperties);
         }
 
         return result;
@@ -434,7 +442,7 @@ public class DataConnection extends StateMachine {
      * not set by the network, set it again using the mtu szie value defined in the APN
      * database for the connected APN
      */
-    private void checkSetMtu(ApnSetting apn, LinkProperties lp) {
+    protected void checkSetMtu(ApnSetting apn, LinkProperties lp) {
         if (lp == null) return;
 
         if (apn == null || lp == null) return;
@@ -459,7 +467,7 @@ public class DataConnection extends StateMachine {
     }
 
     //***** Constructor (NOTE: uses dcc.getHandler() as its Handler)
-    private DataConnection(Phone phone, String name, int id,
+    public DataConnection(Phone phone, String name, int id,
                            DcTracker dct, DataServiceManager dataServiceManager,
                            DcTesterFailBringUpAll failBringUpAll,
                 DcController dcc) {
@@ -484,6 +492,9 @@ public class DataConnection extends StateMachine {
         mNetworkInfo.setRoaming(ss.getDataRoaming());
         mNetworkInfo.setIsAvailable(true);
 
+        /// M: for telephony add-on @{
+        mtkReplaceStates();
+        /// @}
         addState(mDefaultState);
             addState(mInactiveState, mDefaultState);
             addState(mActivatingState, mDefaultState);
@@ -502,7 +513,7 @@ public class DataConnection extends StateMachine {
      *
      * @param cp is the connection parameters
      */
-    private void onConnect(ConnectionParams cp) {
+    protected void onConnect(ConnectionParams cp) {
         if (DBG) log("onConnect: carrier='" + mApnSetting.carrier
                 + "' APN='" + mApnSetting.apn
                 + "' proxy='" + mApnSetting.proxy + "' port='" + mApnSetting.port + "'");
@@ -565,7 +576,7 @@ public class DataConnection extends StateMachine {
      *
      * @param o is the object returned in the AsyncResult.obj.
      */
-    private void tearDownData(Object o) {
+    protected void tearDownData(Object o) {
         int discReason = DataService.REQUEST_REASON_NORMAL;
         ApnContext apnContext = null;
         if ((o != null) && (o instanceof DisconnectParams)) {
@@ -584,7 +595,7 @@ public class DataConnection extends StateMachine {
                 obtainMessage(EVENT_DEACTIVATE_DONE, mTag, 0, o));
     }
 
-    private void notifyAllWithEvent(ApnContext alreadySent, int event, String reason) {
+    protected void notifyAllWithEvent(ApnContext alreadySent, int event, String reason) {
         mNetworkInfo.setDetailedState(mNetworkInfo.getDetailedState(), reason,
                 mNetworkInfo.getExtraInfo());
         for (ConnectionParams cp : mApnContexts.values()) {
@@ -599,7 +610,7 @@ public class DataConnection extends StateMachine {
         }
     }
 
-    private void notifyAllOfConnected(String reason) {
+    protected void notifyAllOfConnected(String reason) {
         notifyAllWithEvent(null, DctConstants.EVENT_DATA_SETUP_COMPLETE, reason);
     }
 
@@ -618,7 +629,7 @@ public class DataConnection extends StateMachine {
      * @param cause and if no error the cause is DcFailCause.NONE
      * @param sendAll is true if all contexts are to be notified
      */
-    private void notifyConnectCompleted(ConnectionParams cp, DcFailCause cause, boolean sendAll) {
+    protected void notifyConnectCompleted(ConnectionParams cp, DcFailCause cause, boolean sendAll) {
         ApnContext alreadySent = null;
 
         if (cp != null && cp.mOnCompletedMsg != null) {
@@ -661,7 +672,7 @@ public class DataConnection extends StateMachine {
      *
      * @param dp is the DisconnectParams.
      */
-    private void notifyDisconnectCompleted(DisconnectParams dp, boolean sendAll) {
+    protected void notifyDisconnectCompleted(DisconnectParams dp, boolean sendAll) {
         if (VDBG) log("NotifyDisconnectCompleted");
 
         ApnContext alreadySent = null;
@@ -673,6 +684,9 @@ public class DataConnection extends StateMachine {
             dp.mOnCompletedMsg = null;
             if (msg.obj instanceof ApnContext) {
                 alreadySent = (ApnContext)msg.obj;
+                /// M: Set ApnContext disconnect reason @{
+                mtkSetApnContextReason(alreadySent, dp.mReason);
+                /// @}
             }
             reason = dp.mReason;
             if (VDBG) {
@@ -701,7 +715,7 @@ public class DataConnection extends StateMachine {
     /*
      * The id is owned by DataConnectionTracker.
      */
-    private int mId;
+    protected int mId;
 
     /**
      * Get the DataConnection ID
@@ -719,7 +733,7 @@ public class DataConnection extends StateMachine {
     /**
      * Clear all settings called when entering mInactiveState.
      */
-    private void clearSettings() {
+    protected void clearSettings() {
         if (DBG) log("clearSettings");
 
         mCreateTime = -1;
@@ -743,7 +757,7 @@ public class DataConnection extends StateMachine {
      * @param cp The original connection params used for data call setup
      * @return Setup result
      */
-    private SetupResult onSetupConnectionCompleted(@DataServiceCallback.ResultCode int resultCode,
+    protected SetupResult onSetupConnectionCompleted(@DataServiceCallback.ResultCode int resultCode,
                                                    DataCallResponse response,
                                                    ConnectionParams cp) {
         SetupResult result;
@@ -804,11 +818,11 @@ public class DataConnection extends StateMachine {
     private static final String TCP_BUFFER_SIZES_EHRPD= "131072,262144,1048576,4096,16384,524288";
     private static final String TCP_BUFFER_SIZES_HSDPA= "61167,367002,1101005,8738,52429,262114";
     private static final String TCP_BUFFER_SIZES_HSPA = "40778,244668,734003,16777,100663,301990";
-    private static final String TCP_BUFFER_SIZES_LTE  =
+    public static String TCP_BUFFER_SIZES_LTE =
             "524288,1048576,2097152,262144,524288,1048576";
     private static final String TCP_BUFFER_SIZES_HSPAP= "122334,734003,2202010,32040,192239,576717";
 
-    private void updateTcpBufferSizes(int rilRat) {
+    protected void updateTcpBufferSizes(int rilRat) {
         String sizes = null;
         if (rilRat == ServiceState.RIL_RADIO_TECHNOLOGY_LTE_CA) {
             // for now treat CA as LTE.  Plan to surface the extra bandwith in a more
@@ -906,11 +920,11 @@ public class DataConnection extends StateMachine {
      * pre-paid SIM reprovisioning over internet, where the carrier insists on no traffic
      * other than from the privileged carrier-app.
      */
-    private boolean mRestrictedNetworkOverride = false;
+    protected boolean mRestrictedNetworkOverride = false;
 
     // Should be called once when the call goes active to examine the state of things and
     // declare the restriction override for the life of the connection
-    private void setNetworkRestriction() {
+    protected void setNetworkRestriction() {
         mRestrictedNetworkOverride = false;
         // first, if we have no restricted requests, this override can stay FALSE:
         boolean noRestrictedRequests = true;
@@ -931,7 +945,7 @@ public class DataConnection extends StateMachine {
         mRestrictedNetworkOverride = !mDct.isDataEnabled();
     }
 
-    NetworkCapabilities getNetworkCapabilities() {
+    protected NetworkCapabilities getNetworkCapabilities() {
         NetworkCapabilities result = new NetworkCapabilities();
         result.addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR);
 
@@ -1066,7 +1080,7 @@ public class DataConnection extends StateMachine {
         return InetAddress.isNumeric(address);
     }
 
-    private SetupResult setLinkProperties(DataCallResponse response,
+    protected SetupResult setLinkProperties(DataCallResponse response,
             LinkProperties linkProperties) {
         // Check if system property dns usable
         String propertyPrefix = "net." + response.getIfname() + ".";
@@ -1164,7 +1178,7 @@ public class DataConnection extends StateMachine {
      * @param cp the Connection parameters
      * @return true if initialization was successful.
      */
-    private boolean initConnection(ConnectionParams cp) {
+    protected boolean initConnection(ConnectionParams cp) {
         ApnContext apnContext = cp.mApnContext;
         if (mApnSetting == null) {
             // Only change apn setting if it isn't set, it will
@@ -1182,6 +1196,10 @@ public class DataConnection extends StateMachine {
         mConnectionParams = cp;
         mConnectionParams.mTag = mTag;
 
+        /// M: Check if Default Apn reference count changed @{
+        mtkCheckDefaultApnRefCount(apnContext);
+        /// @}
+
         // always update the ConnectionParams with the latest or the
         // connectionGeneration gets stale
         mApnContexts.put(apnContext, cp);
@@ -1198,7 +1216,7 @@ public class DataConnection extends StateMachine {
     /**
      * The parent state for all other states.
      */
-    private class DcDefaultState extends State {
+    protected class DcDefaultState extends State {
         @Override
         public void enter() {
             if (DBG) log("DcDefaultState: enter");
@@ -1307,7 +1325,10 @@ public class DataConnection extends StateMachine {
                     setLinkPropertiesHttpProxy(proxy);
                     mAc.replyToMessage(msg, DcAsyncChannel.RSP_SET_LINK_PROPERTIES_HTTP_PROXY);
                     if (mNetworkAgent != null) {
-                        mNetworkAgent.sendLinkProperties(mLinkProperties);
+                        /// M: Mediatek override link properites @{
+                        mNetworkAgent.sendLinkProperties(mtkGetLinkProperties());
+                        /// @}
+                        // mNetworkAgent.sendLinkProperties(mLinkProperties);
                     }
                     break;
                 }
@@ -1372,7 +1393,10 @@ public class DataConnection extends StateMachine {
                     if (mNetworkAgent != null) {
                         mNetworkAgent.sendNetworkCapabilities(getNetworkCapabilities());
                         mNetworkAgent.sendNetworkInfo(mNetworkInfo);
-                        mNetworkAgent.sendLinkProperties(mLinkProperties);
+                        /// M: Mediatek override link properites @{
+                        mNetworkAgent.sendLinkProperties(mtkGetLinkProperties());
+                        /// @}
+                        // mNetworkAgent.sendLinkProperties(mLinkProperties);
                     }
                     break;
                 case EVENT_DATA_CONNECTION_ROAM_ON:
@@ -1404,14 +1428,14 @@ public class DataConnection extends StateMachine {
         }
     }
 
-    private void updateNetworkInfo() {
+    protected void updateNetworkInfo() {
         final ServiceState state = mPhone.getServiceState();
         final int subtype = state.getDataNetworkType();
         mNetworkInfo.setSubtype(subtype, TelephonyManager.getNetworkTypeName(subtype));
         mNetworkInfo.setRoaming(state.getDataRoaming());
     }
 
-    private void updateNetworkInfoSuspendState() {
+    protected void updateNetworkInfoSuspendState() {
         // this is only called when we are either connected or suspended.  Decide which.
         if (mNetworkAgent == null) {
             Rlog.e(getName(), "Setting suspend state without a NetworkAgent");
@@ -1437,12 +1461,12 @@ public class DataConnection extends StateMachine {
         }
     }
 
-    private DcDefaultState mDefaultState = new DcDefaultState();
+    protected DcDefaultState mDefaultState = new DcDefaultState();
 
     /**
      * The state machine is inactive and expects a EVENT_CONNECT.
      */
-    private class DcInactiveState extends State {
+    protected class DcInactiveState extends State {
         // Inform all contexts we've failed connecting
         public void setEnterNotificationParams(ConnectionParams cp, DcFailCause cause) {
             if (VDBG) log("DcInactiveState: setEnterNotificationParams cp,cause");
@@ -1559,12 +1583,12 @@ public class DataConnection extends StateMachine {
             return retVal;
         }
     }
-    private DcInactiveState mInactiveState = new DcInactiveState();
+    protected DcInactiveState mInactiveState = new DcInactiveState();
 
     /**
      * The state machine is activating a connection.
      */
-    private class DcActivatingState extends State {
+    protected class DcActivatingState extends State {
         @Override
         public void enter() {
             StatsLog.write(StatsLog.MOBILE_CONNECTION_STATE_CHANGED,
@@ -1639,8 +1663,8 @@ public class DataConnection extends StateMachine {
                             String str = "DcActivatingState: ERROR_DATA_SERVICE_SPECIFIC_ERROR "
                                     + " delay=" + delay
                                     + " result=" + result
-                                    + " result.isRadioRestartFailure="
-                                    + result.mFailCause.isRadioRestartFailure(mPhone.getContext(),
+                                    + " result.isRestartRadioFail=" +
+                                    result.mFailCause.isRestartRadioFail(mPhone.getContext(),
                                             mPhone.getSubId())
                                     + " isPermanentFailure=" +
                                     mDct.isPermanentFailure(result.mFailCause);
@@ -1673,12 +1697,12 @@ public class DataConnection extends StateMachine {
             return retVal;
         }
     }
-    private DcActivatingState mActivatingState = new DcActivatingState();
+    protected DcActivatingState mActivatingState = new DcActivatingState();
 
     /**
      * The state machine is connected, expecting an EVENT_DISCONNECT.
      */
-    private class DcActiveState extends State {
+    protected class DcActiveState extends State {
 
         @Override public void enter() {
             if (DBG) log("DcActiveState: enter dc=" + DataConnection.this);
@@ -1988,12 +2012,12 @@ public class DataConnection extends StateMachine {
             return retVal;
         }
     }
-    private DcActiveState mActiveState = new DcActiveState();
+    protected DcActiveState mActiveState = new DcActiveState();
 
     /**
      * The state machine is disconnecting.
      */
-    private class DcDisconnectingState extends State {
+    protected class DcDisconnectingState extends State {
         @Override
         public void enter() {
             StatsLog.write(StatsLog.MOBILE_CONNECTION_STATE_CHANGED,
@@ -2046,12 +2070,12 @@ public class DataConnection extends StateMachine {
             return retVal;
         }
     }
-    private DcDisconnectingState mDisconnectingState = new DcDisconnectingState();
+    protected DcDisconnectingState mDisconnectingState = new DcDisconnectingState();
 
     /**
      * The state machine is disconnecting after an creating a connection.
      */
-    private class DcDisconnectionErrorCreatingConnection extends State {
+    protected class DcDisconnectionErrorCreatingConnection extends State {
         @Override
         public void enter() {
             StatsLog.write(StatsLog.MOBILE_CONNECTION_STATE_CHANGED,
@@ -2099,11 +2123,11 @@ public class DataConnection extends StateMachine {
             return retVal;
         }
     }
-    private DcDisconnectionErrorCreatingConnection mDisconnectingErrorCreatingConnection =
+    protected DcDisconnectionErrorCreatingConnection mDisconnectingErrorCreatingConnection =
                 new DcDisconnectionErrorCreatingConnection();
 
 
-    private class DcNetworkAgent extends NetworkAgent {
+    protected class DcNetworkAgent extends NetworkAgent {
 
         private NetworkCapabilities mNetworkCapabilities;
 
@@ -2320,7 +2344,7 @@ public class DataConnection extends StateMachine {
      * @return NO_SUGGESTED_RETRY_DELAY if no retry is needed otherwise the delay to the
      *         next SETUP_DATA_CALL
      */
-    private long getSuggestedRetryDelay(DataCallResponse response) {
+    protected long getSuggestedRetryDelay(DataCallResponse response) {
         /** According to ril.h
          * The value < 0 means no value is suggested
          * The value 0 means retry should be done ASAP.
@@ -2351,7 +2375,7 @@ public class DataConnection extends StateMachine {
         return cmdToString(what);
     }
 
-    private static String msgToString(Message msg) {
+    protected static String msgToString(Message msg) {
         String retVal;
         if (msg == null) {
             retVal = "null";
@@ -2402,7 +2426,7 @@ public class DataConnection extends StateMachine {
      * @param s is string log
      */
     @Override
-    protected void log(String s) {
+    public void log(String s) {
         Rlog.d(getName(), s);
     }
 
@@ -2541,6 +2565,31 @@ public class DataConnection extends StateMachine {
         pw.decreaseIndent();
         pw.println();
         pw.flush();
+    }
+
+    /**
+     * Anchor method to replace states implementation in the state machine initialization procedure.
+     */
+    protected void mtkReplaceStates() {
+    }
+
+    /**
+     * Anchor method of updateLinkProperty/DcDefaultState.processMessage
+     */
+    protected LinkProperties mtkGetLinkProperties() {
+        return mLinkProperties;
+    }
+
+    /**
+     * Anchor method of notifyDisconnectCompleted
+     */
+    protected void mtkSetApnContextReason(ApnContext alreadySent, String reason) {
+    }
+
+    /**
+     * Anchor method of notifyDisconnectCompleted
+     */
+    protected void mtkCheckDefaultApnRefCount(ApnContext apnContext) {
     }
 }
 

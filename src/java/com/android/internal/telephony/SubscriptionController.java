@@ -85,21 +85,27 @@ import java.util.stream.Collectors;
  */
 public class SubscriptionController extends ISub.Stub {
     static final String LOG_TAG = "SubscriptionController";
-    static final boolean DBG = true;
-    static final boolean VDBG = false;
-    static final boolean DBG_CACHE = false;
+    // MTK-START: add on
+    protected static final boolean DBG = true;
+    protected static final boolean VDBG = false;
+    protected static final boolean DBG_CACHE = false;
+    // MTK-END
     static final int MAX_LOCAL_LOG_LINES = 500; // TODO: Reduce to 100 when 17678050 is fixed
     private static final int DEPRECATED_SETTING = -1;
-    private ScLocalLog mLocalLog = new ScLocalLog(MAX_LOCAL_LOG_LINES);
+    // MTK-START: add on
+    protected /*private*/ ScLocalLog mLocalLog = new ScLocalLog(MAX_LOCAL_LOG_LINES);
 
     /* The Cache of Active SubInfoRecord(s) list of currently in use SubInfoRecord(s) */
-    private final List<SubscriptionInfo> mCacheActiveSubInfoList = new ArrayList<>();
+    // MTK-START: add on
+    protected /*private*/ final List<SubscriptionInfo> mCacheActiveSubInfoList = new ArrayList<>();
 
     /**
      * Copied from android.util.LocalLog with flush() adding flush and line number
      * TODO: Update LocalLog
      */
-    static class ScLocalLog {
+    // MTK-START: add on
+    protected static class ScLocalLog {
+    // MTK-END
 
         private LinkedList<String> mLog;
         private int mMaxLines;
@@ -156,18 +162,24 @@ public class SubscriptionController extends ISub.Stub {
     private AppOpsManager mAppOps;
 
     // FIXME: Does not allow for multiple subs in a slot and change to SparseArray
-    private static Map<Integer, Integer> sSlotIndexToSubId =
+    // MTK-START: add on
+    protected /*private*/ static Map<Integer, Integer> sSlotIndexToSubId =
             new ConcurrentHashMap<Integer, Integer>();
-    private static int mDefaultFallbackSubId = SubscriptionManager.INVALID_SUBSCRIPTION_ID;
-    private static int mDefaultPhoneId = SubscriptionManager.DEFAULT_PHONE_INDEX;
-
+    protected /*private*/ static int mDefaultFallbackSubId =
+            SubscriptionManager.INVALID_SUBSCRIPTION_ID;
+    protected /*private*/ static int mDefaultPhoneId = SubscriptionManager.DEFAULT_PHONE_INDEX;
+    // MTK-END
     private int[] colorArr;
     private long mLastISubServiceRegTime;
 
     public static SubscriptionController init(Phone phone) {
         synchronized (SubscriptionController.class) {
             if (sInstance == null) {
-                sInstance = new SubscriptionController(phone);
+                // MTK-START: add on
+                // sInstance = new SubscriptionController(phone);
+                sInstance = TelephonyComponentFactory.getInstance()
+                        .makeSubscriptionController(phone);
+                // MTK-END
             } else {
                 Log.wtf(LOG_TAG, "init() called multiple times!  sInstance = " + sInstance);
             }
@@ -178,7 +190,11 @@ public class SubscriptionController extends ISub.Stub {
     public static SubscriptionController init(Context c, CommandsInterface[] ci) {
         synchronized (SubscriptionController.class) {
             if (sInstance == null) {
-                sInstance = new SubscriptionController(c);
+                // MTK-START: add on
+                // sInstance = new SubscriptionController(c);
+                sInstance = TelephonyComponentFactory.getInstance()
+                        .makeSubscriptionController(c, ci);
+                // MTK-END
             } else {
                 Log.wtf(LOG_TAG, "init() called multiple times!  sInstance = " + sInstance);
             }
@@ -219,7 +235,9 @@ public class SubscriptionController extends ISub.Stub {
         return sSlotIndexToSubId.size() > 0;
     }
 
-    private SubscriptionController(Phone phone) {
+    // MTK-START: add on
+    protected /*private*/ SubscriptionController(Phone phone) {
+    // MTK-END
         mContext = phone.getContext();
         mCM = CallManager.getInstance();
         mAppOps = mContext.getSystemService(AppOpsManager.class);
@@ -233,7 +251,9 @@ public class SubscriptionController extends ISub.Stub {
         if (DBG) logdl("[SubscriptionController] init by Phone");
     }
 
-    private void enforceModifyPhoneState(String message) {
+    // MTK-START: add on
+    protected /*private*/ void enforceModifyPhoneState(String message) {
+    // MTK-END
         mContext.enforceCallingOrSelfPermission(
                 android.Manifest.permission.MODIFY_PHONE_STATE, message);
     }
@@ -268,7 +288,9 @@ public class SubscriptionController extends ISub.Stub {
      * @param cursor
      * @return the query result of desired SubInfoRecord
      */
-    private SubscriptionInfo getSubInfoRecord(Cursor cursor) {
+    // MTK-START: add on
+    protected /*private*/ SubscriptionInfo getSubInfoRecord(Cursor cursor) {
+    // MTK-END
         int id = cursor.getInt(cursor.getColumnIndexOrThrow(
                 SubscriptionManager.UNIQUE_KEY_SUBSCRIPTION_ID));
         String iccId = cursor.getString(cursor.getColumnIndexOrThrow(
@@ -335,7 +357,9 @@ public class SubscriptionController extends ISub.Stub {
      * @param subId The subscription ID
      * @return The ISO country code for the subscription's provider
      */
-    private String getSubscriptionCountryIso(int subId) {
+    // MTK-START: add on
+    protected /*private*/ String getSubscriptionCountryIso(int subId) {
+    // MTK-END
         final int phoneId = getPhoneId(subId);
         if (phoneId < 0) {
             return "";
@@ -651,6 +675,20 @@ public class SubscriptionController extends ISub.Stub {
             mCacheActiveSubInfoList.clear();
             List<SubscriptionInfo> activeSubscriptionInfoList = getSubInfo(
                     SubscriptionManager.SIM_SLOT_INDEX + ">=0", null);
+            // MTK-START: Sort the subinfo order.
+            if (activeSubscriptionInfoList != null) {
+                activeSubscriptionInfoList.sort(SUBSCRIPTION_INFO_COMPARATOR);
+
+                if (DBG_CACHE) {
+                    logdl("[refreshCachedActiveSubscriptionInfoList]- "
+                            + activeSubscriptionInfoList.size() + " infos return");
+                }
+            } else {
+                if (DBG_CACHE) {
+                    logdl("[refreshCachedActiveSubscriptionInfoList]- no info return");
+                }
+            }
+            // MTK-END
             if (activeSubscriptionInfoList != null) {
                 mCacheActiveSubInfoList.addAll(activeSubscriptionInfoList);
             }
@@ -1758,7 +1796,9 @@ public class SubscriptionController extends ISub.Stub {
         broadcastDefaultDataSubIdChanged(subId);
     }
 
-    private void updateAllDataConnectionTrackers() {
+    // MTK-START: add on
+    protected /*private*/ void updateAllDataConnectionTrackers() {
+    // MTK-END
         // Tell Phone Proxies to update data connection tracker
         int len = sPhones.length;
         if (DBG) logdl("[updateAllDataConnectionTrackers] sPhones.length=" + len);
@@ -1768,7 +1808,9 @@ public class SubscriptionController extends ISub.Stub {
         }
     }
 
-    private void broadcastDefaultDataSubIdChanged(int subId) {
+    // MTK-START: add on
+    public /*private*/ void broadcastDefaultDataSubIdChanged(int subId) {
+    // MTK-END
         // Broadcast an Intent for default data sub change
         if (DBG) logdl("[broadcastDefaultDataSubIdChanged] subId=" + subId);
         Intent intent = new Intent(TelephonyIntents.ACTION_DEFAULT_DATA_SUBSCRIPTION_CHANGED);
@@ -1782,7 +1824,9 @@ public class SubscriptionController extends ISub.Stub {
      * sub is set as default subId. If two or more  sub's are active
      * the first sub is set as default subscription
      */
-    private void setDefaultFallbackSubId(int subId) {
+    // MTK-START: add on
+    public /*private*/ void setDefaultFallbackSubId(int subId) {
+    // MTK-END
         if (subId == SubscriptionManager.DEFAULT_SUBSCRIPTION_ID) {
             throw new RuntimeException("setDefaultSubId called with DEFAULT_SUB_ID");
         }
@@ -1843,7 +1887,10 @@ public class SubscriptionController extends ISub.Stub {
         }
     }
 
-    private boolean shouldDefaultBeCleared(List<SubscriptionInfo> records, int subId) {
+    // MTK-START: add on
+    protected /*private*/ boolean shouldDefaultBeCleared(List<SubscriptionInfo> records,
+            int subId) {
+    // MTK-END
         if (DBG) logdl("[shouldDefaultBeCleared: subId] " + subId);
         if (records == null) {
             if (DBG) logdl("[shouldDefaultBeCleared] return true no records subId=" + subId);
@@ -2116,7 +2163,9 @@ public class SubscriptionController extends ISub.Stub {
         return resultValue;
     }
 
-    private static void printStackTrace(String msg) {
+    // MTK-START: add on
+    protected /*private*/ static void printStackTrace(String msg) {
+    // MTK-END
         RuntimeException re = new RuntimeException();
         slogd("StackTrace - " + msg);
         StackTraceElement[] st = re.getStackTrace();

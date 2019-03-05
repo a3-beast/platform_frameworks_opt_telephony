@@ -54,9 +54,13 @@ public class MmTelFeatureCompatAdapter extends MmTelFeature {
 
     private static final int WAIT_TIMEOUT_MS = 2000;
 
-    private final MmTelInterfaceAdapter mCompatFeature;
+    /// M: Mtk add-on @{
+    protected final MmTelInterfaceAdapter mCompatFeature;
+    /// @}
     private ImsRegistrationCompatAdapter mRegCompatAdapter;
-    private int mSessionId = -1;
+    /// M: Mtk add-on @{
+    protected int mSessionId = -1;
+    /// @}
 
     private static final Map<Integer, Integer> REG_TECH_TO_NET_TYPE = new HashMap<>(2);
 
@@ -132,7 +136,8 @@ public class MmTelFeatureCompatAdapter extends MmTelFeature {
     }
 
     // Trampolines "old" listener events to the new interface.
-    private final IImsRegistrationListener mListener = new IImsRegistrationListener.Stub() {
+    /// M: MTK add-on
+    protected IImsRegistrationListener mListener = new IImsRegistrationListener.Stub() {
         @Override
         public void registrationConnected() throws RemoteException {
             // Implemented in the Registration Adapter
@@ -262,7 +267,9 @@ public class MmTelFeatureCompatAdapter extends MmTelFeature {
     }
 
     // Handle Incoming Call as PendingIntent, the old method
-    private BroadcastReceiver mReceiver = new BroadcastReceiver() {
+    /// M: Mtk add-on @{
+    protected BroadcastReceiver mReceiver = new BroadcastReceiver() {
+    /// @}
         @Override
         public void onReceive(Context context, Intent intent) {
             Log.i(TAG, "onReceive");
@@ -481,7 +488,8 @@ public class MmTelFeatureCompatAdapter extends MmTelFeature {
         mRegCompatAdapter = regCompat;
     }
 
-    private MmTelCapabilities convertCapabilities(int[] enabledFeatures) {
+    /// M: MTK add-on
+    protected MmTelCapabilities convertCapabilities(int[] enabledFeatures) {
         boolean[] featuresEnabled = new boolean[enabledFeatures.length];
         for (int i = FEATURE_TYPE_VOICE_OVER_LTE; i <= FEATURE_TYPE_UT_OVER_WIFI
                 && i < enabledFeatures.length; i++) {

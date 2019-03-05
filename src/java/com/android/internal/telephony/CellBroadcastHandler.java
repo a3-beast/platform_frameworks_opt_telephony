@@ -47,6 +47,14 @@ public class CellBroadcastHandler extends WakeLockStateMachine {
         super(debugTag, context, phone);
     }
 
+    // MTK-START
+    // Add dummy constructor for sub class
+    protected CellBroadcastHandler(String debugTag, Context context, Phone phone,
+            Object dummy) {
+        super(debugTag, context, phone, dummy);
+    }
+    // MTK-END
+
     /**
      * Create a new CellBroadcastHandler.
      * @param context the context to use for dispatching Intents
@@ -88,8 +96,7 @@ public class CellBroadcastHandler extends WakeLockStateMachine {
         TelephonyMetrics metrics = TelephonyMetrics.getInstance();
         metrics.writeNewCBSms(mPhone.getPhoneId(), message.getMessageFormat(),
                 message.getMessagePriority(), message.isCmasMessage(), message.isEtwsMessage(),
-                message.getServiceCategory(), message.getSerialNumber(),
-                System.currentTimeMillis());
+                message.getServiceCategory());
 
         Intent intent;
         if (message.isEmergencyMessage()) {

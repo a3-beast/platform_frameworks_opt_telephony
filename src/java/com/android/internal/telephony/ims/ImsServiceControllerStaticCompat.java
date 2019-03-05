@@ -20,7 +20,6 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.os.IBinder;
-import android.os.RemoteException;
 import android.os.ServiceManager;
 import android.util.Log;
 
@@ -38,7 +37,9 @@ public class ImsServiceControllerStaticCompat extends ImsServiceControllerCompat
 
     private static final String IMS_SERVICE_NAME = "ims";
 
-    private IImsService mImsServiceCompat = null;
+    /// M: MTK add-on @{
+    protected IImsService mImsServiceCompat = null;
+    /// @}
 
     public ImsServiceControllerStaticCompat(Context context, ComponentName componentName,
             ImsServiceController.ImsServiceControllerCallbacks callbacks) {
@@ -66,8 +67,13 @@ public class ImsServiceControllerStaticCompat extends ImsServiceControllerCompat
     }
 
     @Override
-    protected MmTelInterfaceAdapter getInterface(int slotId, IImsFeatureStatusCallback c)
-            throws RemoteException {
+    // used for add/remove features and cleanup in ImsServiceController.
+    protected boolean isServiceControllerAvailable() {
+        return mImsServiceCompat != null;
+    }
+
+    @Override
+    protected MmTelInterfaceAdapter getInterface(int slotId, IImsFeatureStatusCallback c) {
         if (mImsServiceCompat == null) {
             Log.w(TAG, "getInterface: IImsService returned null.");
             return null;

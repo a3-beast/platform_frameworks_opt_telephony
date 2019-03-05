@@ -123,6 +123,12 @@ public class CarrierServiceBindHelper {
         if (!SubscriptionManager.isValidPhoneId(phoneId)) {
             return;
         }
+
+        ///M:do nothing in wifi only project @{
+        int numPhones = TelephonyManager.from(mContext).getPhoneCount();
+        if (numPhones == 0) return;
+        ///@}
+
         if (TextUtils.isEmpty(simState) || phoneId >= mLastSimState.length) return;
         if (simState.equals(mLastSimState[phoneId])) {
             // ignore consecutive duplicated events

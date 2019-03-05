@@ -33,6 +33,11 @@ import com.android.internal.telephony.uicc.IccRecords;
 import com.android.internal.telephony.uicc.UiccController;
 import com.android.internal.telephony.uicc.UsimServiceTable;
 
+// MTK-START
+// Add for sub class
+import com.android.internal.telephony.TelephonyComponentFactory;
+// MTK-END
+
 /**
  * This class broadcasts incoming SMS messages to interested apps after storing them in
  * the SmsProvider "raw" table and ACKing them to the SMSC. After each message has been
@@ -40,18 +45,37 @@ import com.android.internal.telephony.uicc.UsimServiceTable;
 public class GsmInboundSmsHandler extends InboundSmsHandler {
 
     /** Handler for SMS-PP data download messages to UICC. */
-    private final UsimDataDownloadHandler mDataDownloadHandler;
+    // MTK-START
+    // Modification for sub class
+    protected final UsimDataDownloadHandler mDataDownloadHandler;
+    // MTK-END
 
     /**
      * Create a new GSM inbound SMS handler.
      */
     private GsmInboundSmsHandler(Context context, SmsStorageMonitor storageMonitor,
             Phone phone) {
+        // MTK-START
+        // Modification for sub class
         super("GsmInboundSmsHandler", context, storageMonitor, phone,
-                GsmCellBroadcastHandler.makeGsmCellBroadcastHandler(context, phone));
+                TelephonyComponentFactory.getInstance().makeGsmCellBroadcastHandler(
+                context, phone));
+        // MTK-END
         phone.mCi.setOnNewGsmSms(getHandler(), EVENT_NEW_SMS, null);
         mDataDownloadHandler = new UsimDataDownloadHandler(phone.mCi);
     }
+
+    // MTK-START
+    // Add a dummy constructor for sub class
+    protected GsmInboundSmsHandler(String name, Context context,
+            SmsStorageMonitor storageMonitor, Phone phone) {
+        super(name, context, storageMonitor, phone,
+                TelephonyComponentFactory.getInstance().makeGsmCellBroadcastHandler(context, phone),
+                null);
+        phone.mCi.setOnNewGsmSms(getHandler(), EVENT_NEW_SMS, null);
+        mDataDownloadHandler = new UsimDataDownloadHandler(phone.mCi);
+    }
+    // MTK-END
 
     /**
      * Unregister for GSM SMS.
@@ -188,8 +212,11 @@ public class GsmInboundSmsHandler extends InboundSmsHandler {
         super.onUpdatePhoneObject(phone);
         log("onUpdatePhoneObject: dispose of old CellBroadcastHandler and make a new one");
         mCellBroadcastHandler.dispose();
-        mCellBroadcastHandler = GsmCellBroadcastHandler
+        // MTK-START
+        // Modification for sub class
+        mCellBroadcastHandler = TelephonyComponentFactory.getInstance()
                 .makeGsmCellBroadcastHandler(mContext, phone);
+        // MTK-END
     }
 
     /**

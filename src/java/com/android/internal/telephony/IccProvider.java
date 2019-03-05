@@ -51,6 +51,9 @@ public class IccProvider extends ContentProvider {
         "_id"
     };
 
+    // M: Revise for add-on
+    static IccInternalInterface sMtkIccProvider = null;
+
     protected static final int ADN = 1;
     protected static final int ADN_SUB = 2;
     protected static final int FDN = 3;
@@ -81,12 +84,23 @@ public class IccProvider extends ContentProvider {
     @Override
     public boolean onCreate() {
         mSubscriptionManager = SubscriptionManager.from(getContext());
+        // M: Revise for add-on
+        TelephonyComponentFactory telephonyComponentFactory
+                = TelephonyComponentFactory.getInstance();
+
+        sMtkIccProvider = telephonyComponentFactory.makeIccProvider(URL_MATCHER, getContext());
         return true;
     }
 
     @Override
     public Cursor query(Uri url, String[] projection, String selection,
             String[] selectionArgs, String sort) {
+        // M: Revise for add-on
+        if (sMtkIccProvider != null) {
+            return sMtkIccProvider.query(url, projection, selection,
+                    selectionArgs, sort);
+        }
+
         if (DBG) log("query");
 
         switch (URL_MATCHER.match(url)) {
@@ -160,6 +174,14 @@ public class IccProvider extends ContentProvider {
     @Override
     public Uri insert(Uri url, ContentValues initialValues) {
         Uri resultUri;
+        // M: Revise for add-on
+        if (sMtkIccProvider != null) {
+            resultUri = sMtkIccProvider.insert(url, initialValues);
+
+            getContext().getContentResolver().notifyChange(url, null);
+            // notify interested parties that an insertion happened
+            return resultUri;
+        }
         int efType;
         String pin2 = null;
         int subId;
@@ -256,6 +278,14 @@ public class IccProvider extends ContentProvider {
 
     @Override
     public int delete(Uri url, String where, String[] whereArgs) {
+        // M: Revise for add-on
+        if (sMtkIccProvider != null) {
+            int result = sMtkIccProvider.delete(url, where, whereArgs);
+            if (result <= 0) return result;
+            getContext().getContentResolver().notifyChange(url, null);
+            return result;
+        }
+
         int efType;
         int subId;
 
@@ -337,6 +367,14 @@ public class IccProvider extends ContentProvider {
 
     @Override
     public int update(Uri url, ContentValues values, String where, String[] whereArgs) {
+        // M: Revise for add-on
+        if (sMtkIccProvider != null) {
+            int result = sMtkIccProvider.update(url, values, where, whereArgs);
+            if (result <= 0) return result;
+            getContext().getContentResolver().notifyChange(url, null);
+            return result;
+        }
+
         String pin2 = null;
         int efType;
         int subId;

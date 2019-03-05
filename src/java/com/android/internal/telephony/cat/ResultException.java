@@ -23,9 +23,11 @@ package com.android.internal.telephony.cat;
  * {@hide}
  */
 public class ResultException extends CatException {
-    private ResultCode mResult;
-    private int mAdditionalInfo;
-    private String mExplanation;
+     // MTK-START
+     protected /*private*/ ResultCode mResult;
+     protected /*private*/ int mAdditionalInfo;
+     protected /*private*/ String mExplanation;
+     // MTK-END
 
     public ResultException(ResultCode result) {
         super();

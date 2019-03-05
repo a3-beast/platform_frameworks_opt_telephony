@@ -38,36 +38,36 @@ public class AdnRecord implements Parcelable {
     static final String LOG_TAG = "AdnRecord";
 
     //***** Instance Variables
-
-    String mAlphaTag = null;
-    String mNumber = null;
-    String[] mEmails;
-    int mExtRecord = 0xff;
-    int mEfid;                   // or 0 if none
-    int mRecordNumber;           // or 0 if none
+    // M: Revise for add-on (public)
+    public String mAlphaTag = null;
+    public String mNumber = null;
+    public String[] mEmails;
+    public int mExtRecord = 0xff;
+    public int mEfid;                   // or 0 if none
+    public int mRecordNumber;           // or 0 if none
 
 
     //***** Constants
-
+    // M: Revise for add-on (protected)
     // In an ADN record, everything but the alpha identifier
     // is in a footer that's 14 bytes
-    static final int FOOTER_SIZE_BYTES = 14;
+    protected static final int FOOTER_SIZE_BYTES = 14;
 
     // Maximum size of the un-extended number field
-    static final int MAX_NUMBER_SIZE_BYTES = 11;
+    protected static final int MAX_NUMBER_SIZE_BYTES = 11;
 
-    static final int EXT_RECORD_LENGTH_BYTES = 13;
-    static final int EXT_RECORD_TYPE_ADDITIONAL_DATA = 2;
-    static final int EXT_RECORD_TYPE_MASK = 3;
-    static final int MAX_EXT_CALLED_PARTY_LENGTH = 0xa;
+    protected static final int EXT_RECORD_LENGTH_BYTES = 13;
+    protected static final int EXT_RECORD_TYPE_ADDITIONAL_DATA = 2;
+    protected static final int EXT_RECORD_TYPE_MASK = 3;
+    protected static final int MAX_EXT_CALLED_PARTY_LENGTH = 0xa;
 
     // ADN offset
-    static final int ADN_BCD_NUMBER_LENGTH = 0;
-    static final int ADN_TON_AND_NPI = 1;
-    static final int ADN_DIALING_NUMBER_START = 2;
-    static final int ADN_DIALING_NUMBER_END = 11;
-    static final int ADN_CAPABILITY_ID = 12;
-    static final int ADN_EXTENSION_ID = 13;
+    protected static final int ADN_BCD_NUMBER_LENGTH = 0;
+    protected static final int ADN_TON_AND_NPI = 1;
+    protected static final int ADN_DIALING_NUMBER_START = 2;
+    protected static final int ADN_DIALING_NUMBER_END = 11;
+    protected static final int ADN_CAPABILITY_ID = 12;
+    protected static final int ADN_EXTENSION_ID = 13;
 
     //***** Static Methods
 
@@ -176,8 +176,9 @@ public class AdnRecord implements Parcelable {
         return mExtRecord != 0 && mExtRecord != 0xff;
     }
 
+    // M: Revise for add-on (protected)
     /** Helper function for {@link #isEqual}. */
-    private static boolean stringCompareNullEqualsEmpty(String s1, String s2) {
+    protected static boolean stringCompareNullEqualsEmpty(String s1, String s2) {
         if (s1 == s2) {
             return true;
         }

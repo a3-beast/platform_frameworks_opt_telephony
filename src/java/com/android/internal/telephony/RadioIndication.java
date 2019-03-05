@@ -106,9 +106,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class RadioIndication extends IRadioIndication.Stub {
-    RIL mRil;
+    public RIL mRil;
 
-    RadioIndication(RIL ril) {
+    public RadioIndication(RIL ril) {
         mRil = ril;
     }
 
@@ -677,6 +677,8 @@ public class RadioIndication extends IRadioIndication.Stub {
     public void voiceRadioTechChanged(int indicationType, int rat) {
         mRil.processIndication(indicationType);
 
+        mRil.mNewVoiceTech = rat;
+
         int response[] = new int[1];
         response[0] = rat;
 
@@ -761,7 +763,7 @@ public class RadioIndication extends IRadioIndication.Stub {
             ArrayList<android.hardware.radio.V1_0.HardwareConfig> configs) {
         mRil.processIndication(indicationType);
 
-        ArrayList<HardwareConfig> response = RIL.convertHalHwConfigList(configs, mRil);
+        ArrayList<HardwareConfig> response = mRil.convertHalHwConfigList(configs, mRil);
 
         if (RIL.RILJ_LOGD) mRil.unsljLogRet(RIL_UNSOL_HARDWARE_CONFIG_CHANGED, response);
 

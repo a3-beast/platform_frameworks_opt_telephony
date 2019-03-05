@@ -52,40 +52,50 @@ public class SIMRecords extends IccRecords {
     private static final boolean VDBG = false;
 
     // ***** Instance Variables
-
-    VoiceMailConstants mVmConfig;
+    // MTK-START: add on
+    protected VoiceMailConstants mVmConfig;
+    // MTK-END
 
     // ***** Cached SIM State; cleared on channel close
 
-    private int mCallForwardingStatus;
-
+    // MTK-START: add on
+    protected int mCallForwardingStatus;
+    // MTK-END
 
     /**
      * States only used by getSpnFsm FSM
      */
-    private GetSpnFsmState mSpnState;
+    // MTK-START: add on
+    protected GetSpnFsmState mSpnState;
+    // MTK-END
 
     /** CPHS service information (See CPHS 4.2 B.3.1.1)
      *  It will be set in onSimReady if reading GET_CPHS_INFO successfully
      *  mCphsInfo[0] is CPHS Phase
      *  mCphsInfo[1] and mCphsInfo[2] is CPHS Service Table
      */
-    private byte[] mCphsInfo = null;
-    boolean mCspPlmnEnabled = true;
+    // MTK-START: add on
+    protected byte[] mCphsInfo = null;
+    protected boolean mCspPlmnEnabled = true;
+    // MTK-END
 
     byte[] mEfMWIS = null;
     byte[] mEfCPHS_MWI =null;
-    byte[] mEfCff = null;
-    byte[] mEfCfis = null;
+    // MTK SATRT: add-on
+    protected byte[] mEfCff = null;
+    protected byte[] mEfCfis = null;
+    // MTK END
 
     byte[] mEfLi = null;
     byte[] mEfPl = null;
 
-    int mSpnDisplayCondition;
+    // MTK-START: add on
+    protected int mSpnDisplayCondition;
     // Numeric network codes listed in TS 51.011 EF[SPDI]
-    ArrayList<String> mSpdiNetworks = null;
+    protected ArrayList<String> mSpdiNetworks = null;
 
-    UsimServiceTable mUsimServiceTable;
+    protected UsimServiceTable mUsimServiceTable;
+    // MTK-END
 
     @Override
     public String toString() {
@@ -104,21 +114,25 @@ public class SIMRecords extends IccRecords {
 
     // ***** Constants
 
+    // MTK-START: add on
     // From TS 51.011 EF[SPDI] section
-    static final int TAG_SPDI = 0xA3;
-    static final int TAG_SPDI_PLMN_LIST = 0x80;
+    protected static final int TAG_SPDI = 0xA3;
+    protected static final int TAG_SPDI_PLMN_LIST = 0x80;
 
     // Full Name IEI from TS 24.008
-    static final int TAG_FULL_NETWORK_NAME = 0x43;
+    protected static final int TAG_FULL_NETWORK_NAME = 0x43;
 
     // Short Name IEI from TS 24.008
-    static final int TAG_SHORT_NETWORK_NAME = 0x45;
+    protected static final int TAG_SHORT_NETWORK_NAME = 0x45;
+    // MTK-END
 
     // active CFF from CPHS 4.2 B.4.5
-    static final int CFF_UNCONDITIONAL_ACTIVE = 0x0a;
-    static final int CFF_UNCONDITIONAL_DEACTIVE = 0x05;
-    static final int CFF_LINE1_MASK = 0x0f;
-    static final int CFF_LINE1_RESET = 0xf0;
+    // MTK SATRT: add-on
+    protected static final int CFF_UNCONDITIONAL_ACTIVE = 0x0a;
+    protected static final int CFF_UNCONDITIONAL_DEACTIVE = 0x05;
+    protected static final int CFF_LINE1_MASK = 0x0f;
+    protected static final int CFF_LINE1_RESET = 0xf0;
+    // MTK END
 
     // CPHS Service Table (See CPHS 4.2 B.3.1)
     private static final int CPHS_SST_MBN_MASK = 0x30;
@@ -126,38 +140,54 @@ public class SIMRecords extends IccRecords {
 
     // EF_CFIS related constants
     // Spec reference TS 51.011 section 10.3.46.
-    private static final int CFIS_BCD_NUMBER_LENGTH_OFFSET = 2;
-    private static final int CFIS_TON_NPI_OFFSET = 3;
-    private static final int CFIS_ADN_CAPABILITY_ID_OFFSET = 14;
-    private static final int CFIS_ADN_EXTENSION_ID_OFFSET = 15;
+    // MTK SATRT: add-on
+    protected static final int CFIS_BCD_NUMBER_LENGTH_OFFSET = 2;
+    protected static final int CFIS_TON_NPI_OFFSET = 3;
+    protected static final int CFIS_ADN_CAPABILITY_ID_OFFSET = 14;
+    protected static final int CFIS_ADN_EXTENSION_ID_OFFSET = 15;
+    // MTK END
 
     // ***** Event Constants
     private static final int SIM_RECORD_EVENT_BASE = 0x00;
-    private static final int EVENT_GET_IMSI_DONE = 3 + SIM_RECORD_EVENT_BASE;
+    // MTK-START: add on
+    protected static final int EVENT_GET_IMSI_DONE = 3 + SIM_RECORD_EVENT_BASE;
+    // MTK-END
     private static final int EVENT_GET_ICCID_DONE = 4 + SIM_RECORD_EVENT_BASE;
-    private static final int EVENT_GET_MBI_DONE = 5 + SIM_RECORD_EVENT_BASE;
-    private static final int EVENT_GET_MBDN_DONE = 6 + SIM_RECORD_EVENT_BASE;
-    private static final int EVENT_GET_MWIS_DONE = 7 + SIM_RECORD_EVENT_BASE;
+    // MTK-START: add on
+    protected static final int EVENT_GET_MBI_DONE = 5 + SIM_RECORD_EVENT_BASE;
+    protected static final int EVENT_GET_MBDN_DONE = 6 + SIM_RECORD_EVENT_BASE;
+    protected static final int EVENT_GET_MWIS_DONE = 7 + SIM_RECORD_EVENT_BASE;
+    // MTK-END
     private static final int EVENT_GET_VOICE_MAIL_INDICATOR_CPHS_DONE = 8 + SIM_RECORD_EVENT_BASE;
-    private static final int EVENT_GET_AD_DONE = 9 + SIM_RECORD_EVENT_BASE; // Admin data on SIM
-    private static final int EVENT_GET_MSISDN_DONE = 10 + SIM_RECORD_EVENT_BASE;
-    private static final int EVENT_GET_CPHS_MAILBOX_DONE = 11 + SIM_RECORD_EVENT_BASE;
-    private static final int EVENT_GET_SPN_DONE = 12 + SIM_RECORD_EVENT_BASE;
+    // MTK-START: add on
+    protected static final int EVENT_GET_AD_DONE = 9 + SIM_RECORD_EVENT_BASE; // Admin data on SIM
+    protected static final int EVENT_GET_MSISDN_DONE = 10 + SIM_RECORD_EVENT_BASE;
+    protected static final int EVENT_GET_CPHS_MAILBOX_DONE = 11 + SIM_RECORD_EVENT_BASE;
+    protected static final int EVENT_GET_SPN_DONE = 12 + SIM_RECORD_EVENT_BASE;
+    // MTK-END
     private static final int EVENT_GET_SPDI_DONE = 13 + SIM_RECORD_EVENT_BASE;
-    private static final int EVENT_UPDATE_DONE = 14 + SIM_RECORD_EVENT_BASE;
+    // MTK-START: add on
+    protected static final int EVENT_UPDATE_DONE = 14 + SIM_RECORD_EVENT_BASE;
+    // MTK-END
     private static final int EVENT_GET_PNN_DONE = 15 + SIM_RECORD_EVENT_BASE;
-    private static final int EVENT_GET_SST_DONE = 17 + SIM_RECORD_EVENT_BASE;
+    // MTK-START: add on
+    protected static final int EVENT_GET_SST_DONE = 17 + SIM_RECORD_EVENT_BASE;
+    // MTK-END
     private static final int EVENT_GET_ALL_SMS_DONE = 18 + SIM_RECORD_EVENT_BASE;
     private static final int EVENT_MARK_SMS_READ_DONE = 19 + SIM_RECORD_EVENT_BASE;
     private static final int EVENT_SET_MBDN_DONE = 20 + SIM_RECORD_EVENT_BASE;
     private static final int EVENT_SMS_ON_SIM = 21 + SIM_RECORD_EVENT_BASE;
     private static final int EVENT_GET_SMS_DONE = 22 + SIM_RECORD_EVENT_BASE;
-    private static final int EVENT_GET_CFF_DONE = 24 + SIM_RECORD_EVENT_BASE;
+    // MTK-START: add on
+    protected static final int EVENT_GET_CFF_DONE = 24 + SIM_RECORD_EVENT_BASE;
+    // MTK-END
     private static final int EVENT_SET_CPHS_MAILBOX_DONE = 25 + SIM_RECORD_EVENT_BASE;
-    private static final int EVENT_GET_INFO_CPHS_DONE = 26 + SIM_RECORD_EVENT_BASE;
-    private static final int EVENT_SET_MSISDN_DONE = 30 + SIM_RECORD_EVENT_BASE;
-    private static final int EVENT_GET_CFIS_DONE = 32 + SIM_RECORD_EVENT_BASE;
-    private static final int EVENT_GET_CSP_CPHS_DONE = 33 + SIM_RECORD_EVENT_BASE;
+    // MTK-START: add on
+    protected static final int EVENT_GET_INFO_CPHS_DONE = 26 + SIM_RECORD_EVENT_BASE;
+    protected static final int EVENT_SET_MSISDN_DONE = 30 + SIM_RECORD_EVENT_BASE;
+    protected static final int EVENT_GET_CFIS_DONE = 32 + SIM_RECORD_EVENT_BASE;
+    protected static final int EVENT_GET_CSP_CPHS_DONE = 33 + SIM_RECORD_EVENT_BASE;
+    // MTK-END
     private static final int EVENT_GET_GID1_DONE = 34 + SIM_RECORD_EVENT_BASE;
     private static final int EVENT_GET_GID2_DONE = 36 + SIM_RECORD_EVENT_BASE;
     private static final int EVENT_GET_PLMN_W_ACT_DONE = 37 + SIM_RECORD_EVENT_BASE;
@@ -168,13 +198,17 @@ public class SIMRecords extends IccRecords {
 
     // TODO: Possibly move these to IccRecords.java
     private static final int SYSTEM_EVENT_BASE = 0x100;
-    private static final int EVENT_APP_LOCKED = 2 + SYSTEM_EVENT_BASE;
+    // MTK-START: add on
+    protected static final int EVENT_APP_LOCKED = 2 + SYSTEM_EVENT_BASE;
+    // MTK-END
     private static final int EVENT_APP_NETWORK_LOCKED = 3 + SYSTEM_EVENT_BASE;
 
 
     // Lookup table for carriers known to produce SIMs which incorrectly indicate MNC length.
 
-    private static final String[] MCCMNC_CODES_HAVING_3DIGITS_MNC = {
+    // MTK-START: add on
+    protected static final String[] MCCMNC_CODES_HAVING_3DIGITS_MNC = {
+    // MTK-END
         "302370", "302720", "310260",
         "405025", "405026", "405027", "405028", "405029", "405030", "405031", "405032",
         "405033", "405034", "405035", "405036", "405037", "405038", "405039", "405040",
@@ -289,7 +323,9 @@ public class SIMRecords extends IccRecords {
         return mUsimServiceTable;
     }
 
-    private int getExtFromEf(int ef) {
+    // MTK-START: add on
+    protected int getExtFromEf(int ef) {
+    // MTK-END
         int ext;
         switch (ef) {
             case EF_MSISDN:
@@ -449,14 +485,21 @@ public class SIMRecords extends IccRecords {
                     EF_MWIS, 1, mEfMWIS, null,
                     obtainMessage (EVENT_UPDATE_DONE, EF_MWIS, 0));
             }
-
-            if (mEfCPHS_MWI != null) {
-                    // Refer CPHS4_2.WW6 B4.2.3
-                mEfCPHS_MWI[0] = (byte)((mEfCPHS_MWI[0] & 0xf0)
-                            | (countWaiting == 0 ? 0x5 : 0xa));
-                mFh.updateEFTransparent(
-                    EF_VOICE_MAIL_INDICATOR_CPHS, mEfCPHS_MWI,
-                    obtainMessage (EVENT_UPDATE_DONE, EF_VOICE_MAIL_INDICATOR_CPHS));
+            // MTK-START: SIM COMMON
+            if (mParentApp.getType() == AppType.APPTYPE_USIM) {
+                log("[setVoiceMessageWaiting] It is USIM card, skip write CPHS file");
+            } else {
+            // MTK-END
+                if (mEfCPHS_MWI != null) {
+                        // Refer CPHS4_2.WW6 B4.2.3
+                    mEfCPHS_MWI[0] = (byte)((mEfCPHS_MWI[0] & 0xf0)
+                                | (countWaiting == 0 ? 0x5 : 0xa));
+                    mFh.updateEFTransparent(
+                        EF_VOICE_MAIL_INDICATOR_CPHS, mEfCPHS_MWI,
+                        obtainMessage (EVENT_UPDATE_DONE, EF_VOICE_MAIL_INDICATOR_CPHS));
+                // MTK-START
+                }
+                // MTK-END
             }
         } catch (ArrayIndexOutOfBoundsException ex) {
             logw("Error saving voice mail state to SIM. Probably malformed SIM record", ex);
@@ -464,7 +507,9 @@ public class SIMRecords extends IccRecords {
     }
 
     // Validate data is not null and not empty.
-    private boolean validEfCfis(byte[] data) {
+    // MTK SATRT: add-on
+    protected boolean validEfCfis(byte[] data) {
+    // MTK END
         if (data != null) {
             if (data[0] < 1 || data[0] > 4) {
                 // The MSP (Multiple Subscriber Profile) byte should be between
@@ -1509,7 +1554,9 @@ public class SIMRecords extends IccRecords {
         }
     }
 
-    private void setVoiceCallForwardingFlagFromSimRecords() {
+    // MTK-START: add-on
+    protected void setVoiceCallForwardingFlagFromSimRecords() {
+    // MTK-END
         if (validEfCfis(mEfCfis)) {
             // Refer TS 51.011 Section 10.3.46 for the content description
             mCallForwardingStatus = (mEfCfis[1] & 0x01);
@@ -1525,7 +1572,9 @@ public class SIMRecords extends IccRecords {
         }
     }
 
-    private void setSimLanguageFromEF() {
+    // MTK-START: add on
+    protected void setSimLanguageFromEF() {
+    // MTK-END
         Resources resource = Resources.getSystem();
         if (resource.getBoolean(com.android.internal.R.bool.config_use_sim_language_file)) {
             setSimLanguage(mEfLi, mEfPl);
@@ -1557,7 +1606,7 @@ public class SIMRecords extends IccRecords {
         // Some fields require more than one SIM record to set
 
         String operator = getOperatorNumeric();
-        if (!TextUtils.isEmpty(operator)) {
+        if (!TextUtils.isEmpty(operator) && checkCdma3gCard()) {
             log("onAllRecordsLoaded set 'gsm.sim.operator.numeric' to operator='" +
                     operator + "'");
             mTelephonyManager.setSimOperatorNumericForPhone(
@@ -1568,7 +1617,7 @@ public class SIMRecords extends IccRecords {
 
         String imsi = getIMSI();
 
-        if (!TextUtils.isEmpty(imsi) && imsi.length() >= 3) {
+        if (!TextUtils.isEmpty(imsi) && imsi.length() >= 3  && checkCdma3gCard()) {
             log("onAllRecordsLoaded set mcc imsi" + (VDBG ? ("=" + imsi) : ""));
             mTelephonyManager.setSimCountryIsoForPhone(
                     mParentApp.getPhoneId(), MccTable.countryCodeForMcc(
@@ -1584,7 +1633,9 @@ public class SIMRecords extends IccRecords {
 
     //***** Private methods
 
-    private void setVoiceMailByCountry (String spn) {
+    // MTK-START: add on
+    protected void setVoiceMailByCountry (String spn) {
+    // MTK-END
         if (mVmConfig.containsCarrier(spn)) {
             mIsVoiceMailFixed = true;
             mVoiceMailNum = mVmConfig.getVoiceMailNumber(spn);
@@ -1607,7 +1658,9 @@ public class SIMRecords extends IccRecords {
         fetchSimRecords();
     }
 
-    private void onLocked(int msg) {
+    // MTK-START: add on
+    protected void onLocked(int msg) {
+    // MTK-END
         if (DBG) log("only fetch EF_LI, EF_PL and EF_ICCID in locked state");
         mLockedRecordsReqReason = msg == EVENT_APP_LOCKED ? LOCKED_RECORDS_REQ_REASON_LOCKED :
                 LOCKED_RECORDS_REQ_REASON_NETWORK_LOCKED;
@@ -1630,7 +1683,9 @@ public class SIMRecords extends IccRecords {
         }
     }
 
-    private void loadCallForwardingRecords() {
+    // MTK SATRT: add-on
+    protected void loadCallForwardingRecords() {
+    // MTK END
         mRecordsRequested = true;
         mFh.loadEFLinearFixed(EF_CFIS, 1, obtainMessage(EVENT_GET_CFIS_DONE));
         mRecordsToLoad++;
@@ -1764,7 +1819,10 @@ public class SIMRecords extends IccRecords {
                 && mParentApp.getUiccProfile().getOperatorBrandOverride() != null) {
         // If the operator has been overridden, treat it as the SPN file on the SIM did not exist.
             rule = SPN_RULE_SHOW_PLMN;
-        } else if (TextUtils.isEmpty(getServiceProviderName()) || mSpnDisplayCondition == -1) {
+        // MTK-START: add on
+        } else if (!isSpnActive()
+                || TextUtils.isEmpty(getServiceProviderName()) || mSpnDisplayCondition == -1) {
+        // MTK-END
             // No EF_SPN content was found on the SIM, or not yet loaded.  Just show ONS.
             rule = SPN_RULE_SHOW_PLMN;
         } else if (useRoamingFromServiceState() ? !serviceState.getRoaming()
@@ -1822,7 +1880,9 @@ public class SIMRecords extends IccRecords {
     /**
      * States of Get SPN Finite State Machine which only used by getSpnFsm()
      */
-    private enum GetSpnFsmState {
+    // MTK-START: add on
+    protected enum GetSpnFsmState {
+    // MTK-END
         IDLE,               // No initialized
         INIT,               // Start FSM
         READ_SPN_3GPP,      // Load EF_SPN firstly
@@ -2042,7 +2102,9 @@ public class SIMRecords extends IccRecords {
     /**
      * check to see if Mailbox Number is allocated and activated in CPHS SST
      */
-    private boolean isCphsMailboxEnabled() {
+    // MTK-START: add on
+    protected boolean isCphsMailboxEnabled() {
+    // MTK-END
         if (mCphsInfo == null)  return false;
         return ((mCphsInfo[1] & CPHS_SST_MBN_MASK) == CPHS_SST_MBN_ENABLED );
     }
@@ -2151,4 +2213,14 @@ public class SIMRecords extends IccRecords {
         pw.println(" mEhplmns[]=" + Arrays.toString(mEhplmns));
         pw.flush();
     }
+
+    // MTK-START: add on
+    protected boolean checkCdma3gCard() {
+        return true;
+    }
+
+    protected boolean isSpnActive() {
+        return true;
+    }
+    // MTK-END
 }

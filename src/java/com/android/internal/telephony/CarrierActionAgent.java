@@ -166,6 +166,7 @@ public class CarrierActionAgent extends Handler {
                     if (TelephonyManager.getDefault().getSimCount() != 1) {
                         mobileData = mobileData + mPhone.getSubId();
                     }
+                    mSettingsObserver.unobserve();
                     mSettingsObserver.observe(Settings.Global.getUriFor(mobileData),
                             EVENT_MOBILE_DATA_SETTINGS_CHANGED);
                     mSettingsObserver.observe(
@@ -174,6 +175,9 @@ public class CarrierActionAgent extends Handler {
                     mSettingsObserver.observe(
                             Telephony.Carriers.CONTENT_URI, EVENT_APN_SETTINGS_CHANGED);
                     if (mPhone.getServiceStateTracker() != null) {
+                        // To avoid registering the same handler again,
+                        // we should unregister it first.
+                        mPhone.getServiceStateTracker().unregisterForDataRoamingOff(this);
                         mPhone.getServiceStateTracker().registerForDataRoamingOff(
                                 this, EVENT_DATA_ROAMING_OFF, null, false);
                     }

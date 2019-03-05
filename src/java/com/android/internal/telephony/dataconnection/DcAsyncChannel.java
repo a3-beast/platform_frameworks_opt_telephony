@@ -33,7 +33,7 @@ public class DcAsyncChannel extends AsyncChannel {
     private static final boolean DBG = false;
     private String mLogTag;
 
-    private DataConnection mDc;
+    protected DataConnection mDc;
     private long mDcThreadId;
 
     public static final int BASE = Protocol.BASE_DATA_CONNECTION_AC;
@@ -425,14 +425,14 @@ public class DcAsyncChannel extends AsyncChannel {
         return mDc.getName();
     }
 
-    private boolean isCallerOnDifferentThread() {
+    protected boolean isCallerOnDifferentThread() {
         long curThreadId = Thread.currentThread().getId();
         boolean value = mDcThreadId != curThreadId;
         if (DBG) log("isCallerOnDifferentThread: " + value);
         return value;
     }
 
-    private void log(String s) {
+    protected void log(String s) {
         android.telephony.Rlog.d(mLogTag, "DataConnectionAc " + s);
     }
 

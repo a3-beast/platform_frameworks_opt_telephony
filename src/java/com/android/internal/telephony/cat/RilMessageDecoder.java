@@ -22,6 +22,9 @@ import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
 
 import com.android.internal.telephony.PhoneConstants;
+//MTK-START
+import com.android.internal.telephony.TelephonyComponentFactory;
+//MTK-END
 import com.android.internal.telephony.uicc.IccFileHandler;
 import com.android.internal.telephony.uicc.IccUtils;
 import com.android.internal.util.State;
@@ -31,22 +34,24 @@ import com.android.internal.util.StateMachine;
  * Class used for queuing raw ril messages, decoding them into CommanParams
  * objects and sending the result back to the CAT Service.
  */
-class RilMessageDecoder extends StateMachine {
+// MTK-START
+public class RilMessageDecoder extends StateMachine {
 
     // constants
-    private static final int CMD_START = 1;
-    private static final int CMD_PARAMS_READY = 2;
+    protected /*private*/ static final int CMD_START = 1;
+    protected /*private*/ static final int CMD_PARAMS_READY = 2;
 
     // members
-    private CommandParamsFactory mCmdParamsFactory = null;
-    private RilMessage mCurrentRilMessage = null;
-    private Handler mCaller = null;
-    private static int mSimCount = 0;
-    private static RilMessageDecoder[] mInstance = null;
+    protected /*private*/ CommandParamsFactory mCmdParamsFactory = null;
+    protected /*private*/ RilMessage mCurrentRilMessage = null;
+    public /*private*/ Handler mCaller = null;
+    protected /*private*/ static int mSimCount = 0;
+    protected /*private*/ static RilMessageDecoder[] mInstance = null;
 
     // States
-    private StateStart mStateStart = new StateStart();
-    private StateCmdParamsReady mStateCmdParamsReady = new StateCmdParamsReady();
+    protected /*private*/ StateStart mStateStart = new StateStart();
+    protected /*private*/ StateCmdParamsReady mStateCmdParamsReady = new StateCmdParamsReady();
+    // MTK-END
 
     /**
      * Get the singleton instance, constructing if necessary.
@@ -67,7 +72,11 @@ class RilMessageDecoder extends StateMachine {
 
         if (slotId != SubscriptionManager.INVALID_SIM_SLOT_INDEX && slotId < mSimCount) {
             if (null == mInstance[slotId]) {
-                mInstance[slotId] = new RilMessageDecoder(caller, fh);
+                // MTK-START
+                //mInstance[slotId] = new RilMessageDecoder(caller, fh);
+                mInstance[slotId] = TelephonyComponentFactory.getInstance().makeRilMessageDecoder(
+                        caller, fh, slotId);
+               // MTK-END
             }
         } else {
             CatLog.d("RilMessageDecoder", "invaild slot id: " + slotId);
@@ -102,13 +111,17 @@ class RilMessageDecoder extends StateMachine {
         sendMessage(msg);
     }
 
-    private void sendCmdForExecution(RilMessage rilMsg) {
+    // MTK-START
+    protected /*private*/ void sendCmdForExecution(RilMessage rilMsg) {
+    // MTK-END
         Message msg = mCaller.obtainMessage(CatService.MSG_ID_RIL_MSG_DECODED,
                 new RilMessage(rilMsg));
         msg.sendToTarget();
     }
 
-    private RilMessageDecoder(Handler caller, IccFileHandler fh) {
+    // MTK-START
+    public /*private*/ RilMessageDecoder(Handler caller, IccFileHandler fh) {
+    // MTK-END
         super("RilMessageDecoder");
 
         addState(mStateStart);
@@ -119,7 +132,9 @@ class RilMessageDecoder extends StateMachine {
         mCmdParamsFactory = CommandParamsFactory.getInstance(this, fh);
     }
 
-    private RilMessageDecoder() {
+     // MTK-START
+    public /*private*/ RilMessageDecoder() {
+    // MTK-END
         super("RilMessageDecoder");
     }
 
@@ -155,7 +170,9 @@ class RilMessageDecoder extends StateMachine {
         }
     }
 
-    private boolean decodeMessageParams(RilMessage rilMsg) {
+     // MTK-START
+     protected /*private*/ boolean decodeMessageParams(RilMessage rilMsg) {
+     // MTK-END
         boolean decodingStarted;
 
         mCurrentRilMessage = rilMsg;

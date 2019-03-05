@@ -130,18 +130,18 @@ public class RetryManager {
      * APN setting, we'll fall into an infinite loop. Therefore adding a counter to retry up to
      * MAX_SAME_APN_RETRY times can avoid it.
      */
-    private static final int MAX_SAME_APN_RETRY = 3;
+    protected static int MAX_SAME_APN_RETRY = 3;
 
     /**
      * The delay (in milliseconds) between APN trying within the same round
      */
-    private long mInterApnDelay;
+    protected long mInterApnDelay;
 
     /**
      * The delay (in milliseconds) between APN trying within the same round when we are in
      * fail fast mode
      */
-    private long mFailFastInterApnDelay;
+    protected long mFailFastInterApnDelay;
 
     /**
      * The delay (in milliseconds) for APN retrying after disconnect (e.g. Modem suddenly reports
@@ -152,12 +152,12 @@ public class RetryManager {
     /**
      * Modem suggested delay for retrying the current APN
      */
-    private long mModemSuggestedDelay = NO_SUGGESTED_RETRY_DELAY;
+    protected long mModemSuggestedDelay = NO_SUGGESTED_RETRY_DELAY;
 
     /**
      * The counter for same APN retrying. See MAX_SAME_APN_RETRY for the details.
      */
-    private int mSameApnRetryCount = 0;
+    protected int mSameApnRetryCount = 0;
 
     /**
      * Retry record with times in milli-seconds
@@ -177,22 +177,22 @@ public class RetryManager {
      */
     private ArrayList<RetryRec> mRetryArray = new ArrayList<RetryRec>();
 
-    private Phone mPhone;
+    protected Phone mPhone;
 
     /**
      * Flag indicating whether retrying forever regardless the maximum retry count mMaxRetryCount
      */
-    private boolean mRetryForever = false;
+    protected boolean mRetryForever = false;
 
     /**
      * The maximum number of retries to attempt
      */
-    private int mMaxRetryCount;
+    protected int mMaxRetryCount;
 
     /**
      * The current number of retries
      */
-    private int mRetryCount = 0;
+    protected int mRetryCount = 0;
 
     /**
      * Random number generator. The random delay will be added into retry timer to avoid all devices
@@ -209,17 +209,17 @@ public class RetryManager {
      * The list to store APN setting candidates for data call setup. Most of the carriers only have
      * one APN, but few carriers have more than one.
      */
-    private ArrayList<ApnSetting> mWaitingApns = null;
+    protected ArrayList<ApnSetting> mWaitingApns = null;
 
     /**
      * Index pointing to the current trying APN from mWaitingApns
      */
-    private int mCurrentApnIndex = -1;
+    protected int mCurrentApnIndex = -1;
 
     /**
      * Apn context type. Could be "default, "mms", "supl", etc...
      */
-    private String mApnType;
+    protected String mApnType;
 
     /**
      * Retry manager constructor
@@ -238,7 +238,7 @@ public class RetryManager {
      *
      * @return true if successful
      */
-    private boolean configure(String configStr) {
+    protected boolean configure(String configStr) {
         // Strip quotes if present.
         if ((configStr.startsWith("\"") && configStr.endsWith("\""))) {
             configStr = configStr.substring(1, configStr.length() - 1);
@@ -322,7 +322,7 @@ public class RetryManager {
     /**
      * Configure the retry manager
      */
-    private void configureRetry() {
+    protected void configureRetry() {
         String configString = null;
         String otherConfigString = null;
 
@@ -405,7 +405,7 @@ public class RetryManager {
     /**
      * Return the timer that should be used to trigger the data reconnection
      */
-    private int getRetryTimer() {
+    protected int getRetryTimer() {
         int index;
         if (mRetryCount < mRetryArray.size()) {
             index = mRetryCount;

@@ -143,7 +143,9 @@ public abstract class IccRecords extends Handler implements IccConstants {
     public static final int EVENT_GET_ICC_RECORD_DONE = 100;
     public static final int EVENT_REFRESH = 31; // ICC refresh occurred
     protected static final int EVENT_APP_READY = 1;
-    private static final int EVENT_AKA_AUTHENTICATE_DONE          = 90;
+    // MTK-START: add on
+    protected static final int EVENT_AKA_AUTHENTICATE_DONE          = 90;
+    // MTK-END
 
     public static final int CALL_FORWARDING_STATUS_DISABLED = 0;
     public static final int CALL_FORWARDING_STATUS_ENABLED = 1;
@@ -997,4 +999,40 @@ public abstract class IccRecords extends Handler implements IccConstants {
         }
         pw.flush();
     }
+
+    // MTK-START: add-on
+    public String getSpNameInEfSpn() {
+        return null;
+    }
+
+    public String isOperatorMvnoForEfPnn() {
+        return null;
+    }
+
+    public String getEfGbabp() {
+        return null;
+    }
+
+    public void setEfGbabp(String gbabp, Message onComplete) {
+        if (onComplete == null) {
+            return;
+        }
+
+        AsyncResult.forMessage(onComplete, null,
+                new IccException("Default setEfGbabp exception."));
+        onComplete.sendToTarget();
+    }
+
+    public byte[] getEfPsismsc() {
+        return null;
+    }
+
+    public byte[] getEfSmsp() {
+        return null;
+    }
+
+    public int getMncLength() {
+        return 0;
+    }
+    // MTK-END
 }

@@ -43,9 +43,9 @@ public class RILRequest {
     private static final int MAX_POOL_SIZE = 4;
 
     //***** Instance Variables
-    int mSerial;
-    int mRequest;
-    Message mResult;
+    public int mSerial;
+    public int mRequest;
+    public Message mResult;
     RILRequest mNext;
     int mWakeLockType;
     WorkSource mWorkSource;
@@ -181,7 +181,7 @@ public class RILRequest {
         sNextSerial.set(sRandom.nextInt());
     }
 
-    String serialString() {
+    public String serialString() {
         //Cheesy way to do %04d
         StringBuilder sb = new StringBuilder(8);
         String sn;

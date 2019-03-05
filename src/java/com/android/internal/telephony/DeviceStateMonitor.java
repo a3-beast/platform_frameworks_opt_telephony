@@ -64,7 +64,6 @@ public class DeviceStateMonitor extends Handler {
     private static final int EVENT_POWER_SAVE_MODE_CHANGED      = 3;
     private static final int EVENT_CHARGING_STATE_CHANGED       = 4;
     private static final int EVENT_TETHERING_STATE_CHANGED      = 5;
-    private static final int EVENT_RADIO_AVAILABLE              = 6;
 
     // TODO(b/74006656) load hysteresis values from a property when DeviceStateMonitor starts
     private static final int HYSTERESIS_KBPS = 50;
@@ -201,7 +200,6 @@ public class DeviceStateMonitor extends Handler {
         mPhone.getContext().registerReceiver(mBroadcastReceiver, filter, null, mPhone);
 
         mPhone.mCi.registerForRilConnected(this, EVENT_RIL_CONNECTED, null);
-        mPhone.mCi.registerForAvailable(this, EVENT_RADIO_AVAILABLE, null);
     }
 
     /**
@@ -346,8 +344,7 @@ public class DeviceStateMonitor extends Handler {
         log("handleMessage msg=" + msg, false);
         switch (msg.what) {
             case EVENT_RIL_CONNECTED:
-            case EVENT_RADIO_AVAILABLE:
-                onReset();
+                onRilConnected();
                 break;
             case EVENT_UPDATE_MODE_CHANGED:
                 onSetIndicationUpdateMode(msg.arg1, msg.arg2);
@@ -423,14 +420,14 @@ public class DeviceStateMonitor extends Handler {
     }
 
     /**
-     * Called when RIL is connected during boot up or radio becomes available after modem restart.
+     * Called when RIL is connected during boot up or reconnected after modem restart.
      *
      * When modem crashes, if the user turns the screen off before RIL reconnects, device
      * state and filter cannot be sent to modem. Resend the state here so that modem
      * has the correct state (to stop signal strength reporting, etc).
      */
-    private void onReset() {
-        log("onReset.", true);
+    private void onRilConnected() {
+        log("RIL connected.", true);
         sendDeviceState(CHARGING_STATE, mIsCharging);
         sendDeviceState(LOW_DATA_EXPECTED, mIsLowDataExpected);
         sendDeviceState(POWER_SAVE_MODE, mIsPowerSaveOn);

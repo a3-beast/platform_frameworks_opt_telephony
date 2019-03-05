@@ -55,7 +55,7 @@ public class CdmaInboundSmsHandler extends InboundSmsHandler {
     /**
      * Create a new inbound SMS handler for CDMA.
      */
-    private CdmaInboundSmsHandler(Context context, SmsStorageMonitor storageMonitor,
+    public CdmaInboundSmsHandler(Context context, SmsStorageMonitor storageMonitor,
             Phone phone, CdmaSMSDispatcher smsDispatcher) {
         super("CdmaInboundSmsHandler", context, storageMonitor, phone,
                 CellBroadcastHandler.makeCellBroadcastHandler(context, phone));
@@ -64,6 +64,21 @@ public class CdmaInboundSmsHandler extends InboundSmsHandler {
                 phone.mCi);
         phone.mCi.setOnNewCdmaSms(getHandler(), EVENT_NEW_SMS, null);
     }
+
+    // MTK-START
+    /**
+     * Create a new inbound SMS handler for CDMA without the state initialization.
+     */
+    public CdmaInboundSmsHandler(String name, Context context, SmsStorageMonitor storageMonitor,
+            Phone phone, CdmaSMSDispatcher smsDispatcher) {
+        super(name, context, storageMonitor, phone,
+                CellBroadcastHandler.makeCellBroadcastHandler(context, phone), null);
+        mSmsDispatcher = smsDispatcher;
+        mServiceCategoryProgramHandler = CdmaServiceCategoryProgramHandler.makeScpHandler(context,
+                phone.mCi);
+        phone.mCi.setOnNewCdmaSms(getHandler(), EVENT_NEW_SMS, null);
+    }
+    // MTK-END
 
     /**
      * Unregister for CDMA SMS.
@@ -82,8 +97,14 @@ public class CdmaInboundSmsHandler extends InboundSmsHandler {
      */
     public static CdmaInboundSmsHandler makeInboundSmsHandler(Context context,
             SmsStorageMonitor storageMonitor, Phone phone, CdmaSMSDispatcher smsDispatcher) {
+        // MTK-START, anchor code to create the mediatek extension
+        /*
         CdmaInboundSmsHandler handler = new CdmaInboundSmsHandler(context, storageMonitor,
                 phone, smsDispatcher);
+        */
+        CdmaInboundSmsHandler handler = TelephonyComponentFactory.getInstance().
+                makeCdmaInboundSmsHandler(context, storageMonitor, phone, smsDispatcher);
+        // MTK-END
         handler.start();
         return handler;
     }

@@ -32,30 +32,31 @@ import java.util.Iterator;
 public class AdnRecordCache extends Handler implements IccConstants {
     //***** Instance Variables
 
-    private IccFileHandler mFh;
-    private UsimPhoneBookManager mUsimPhoneBookManager;
+    // M: Revise for add-on (protected)
+    protected IccFileHandler mFh;
+    protected UsimPhoneBookManager mUsimPhoneBookManager;
 
     // Indexed by EF ID
-    SparseArray<ArrayList<AdnRecord>> mAdnLikeFiles
+    protected SparseArray<ArrayList<AdnRecord>> mAdnLikeFiles
         = new SparseArray<ArrayList<AdnRecord>>();
 
     // People waiting for ADN-like files to be loaded
-    SparseArray<ArrayList<Message>> mAdnLikeWaiters
+    protected SparseArray<ArrayList<Message>> mAdnLikeWaiters
         = new SparseArray<ArrayList<Message>>();
 
     // People waiting for adn record to be updated
-    SparseArray<Message> mUserWriteResponse = new SparseArray<Message>();
+    protected SparseArray<Message> mUserWriteResponse = new SparseArray<Message>();
 
     //***** Event Constants
 
-    static final int EVENT_LOAD_ALL_ADN_LIKE_DONE = 1;
-    static final int EVENT_UPDATE_ADN_DONE = 2;
+    protected static final int EVENT_LOAD_ALL_ADN_LIKE_DONE = 1;
+    protected static final int EVENT_UPDATE_ADN_DONE = 2;
 
     //***** Constructor
 
 
-
-    AdnRecordCache(IccFileHandler fh) {
+    // M: Revise for add-on (public)
+    public AdnRecordCache(IccFileHandler fh) {
         mFh = fh;
         mUsimPhoneBookManager = new UsimPhoneBookManager(mFh, this);
     }
@@ -74,7 +75,8 @@ public class AdnRecordCache extends Handler implements IccConstants {
 
     }
 
-    private void clearWaiters() {
+    // M: Revise for add-on (private => protected)
+    protected void clearWaiters() {
         int size = mAdnLikeWaiters.size();
         for (int i = 0; i < size; i++) {
             ArrayList<Message> waiters = mAdnLikeWaiters.valueAt(i);
@@ -307,7 +309,8 @@ public class AdnRecordCache extends Handler implements IccConstants {
 
     //***** Private methods
 
-    private void
+    // M: Revise for add-on (protected)
+    protected void
     notifyWaiters(ArrayList<Message> waiters, AsyncResult ar) {
 
         if (waiters == null) {

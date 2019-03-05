@@ -306,6 +306,12 @@ public class TelephonyRegistryMock extends ITelephonyRegistry.Stub {
     }
 
     @Override
+    public void notifyPreciseDataConnectionFailedForSubscriber(int subId, String reason,
+            String apnType, String apn, String failCause) {
+        throw new RuntimeException("Not implemented");
+    }
+
+    @Override
     public void notifyCellInfoForSubscriber(int subId, List<CellInfo> cellInfo) {
         throw new RuntimeException("Not implemented");
     }

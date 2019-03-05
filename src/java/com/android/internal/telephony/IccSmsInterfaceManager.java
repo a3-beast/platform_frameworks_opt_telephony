@@ -131,7 +131,13 @@ public class IccSmsInterfaceManager {
         this(phone, phone.getContext(),
                 (AppOpsManager) phone.getContext().getSystemService(Context.APP_OPS_SERVICE),
                 (UserManager) phone.getContext().getSystemService(Context.USER_SERVICE),
+                // MTK-START
+                // Try to get the propretary object
+                /*
                 new SmsDispatchersController(
+                */
+                TelephonyComponentFactory.getInstance().makeSmsDispatchersController(
+                // MTK-END
                         phone, phone.mSmsStorageMonitor, phone.mSmsUsageMonitor));
     }
 
@@ -376,8 +382,11 @@ public class IccSmsInterfaceManager {
      *  raw pdu of the status report is in the extended data ("pdu").
      */
 
-    private void sendDataInternal(String destAddr, String scAddr,
+    // MTK-START
+    // Modified for sub class
+    protected void sendDataInternal(String destAddr, String scAddr,
             int destPort, byte[] data, PendingIntent sentIntent, PendingIntent deliveryIntent) {
+    // MTK-END
         if (Rlog.isLoggable("SMS", Log.VERBOSE)) {
             log("sendData: destAddr=" + destAddr + " scAddr=" + scAddr + " destPort=" +
                 destPort + " data='"+ HexDump.toHexString(data)  + "' sentIntent=" +
@@ -465,10 +474,13 @@ public class IccSmsInterfaceManager {
      *  Any Other values including negative considered as Invalid Validity Period of the message.
      */
 
-    private void sendTextInternal(String callingPackage, String destAddr, String scAddr,
+    // MTK-START
+    // Modified for sub class
+    protected void sendTextInternal(String callingPackage, String destAddr, String scAddr,
             String text, PendingIntent sentIntent, PendingIntent deliveryIntent,
             boolean persistMessageForNonDefaultSmsApp, int priority, boolean expectMore,
             int validityPeriod) {
+    // MTK-END
         if (Rlog.isLoggable("SMS", Log.VERBOSE)) {
             log("sendText: destAddr=" + destAddr + " scAddr=" + scAddr +
                 " text='"+ text + "' sentIntent=" +
@@ -928,13 +940,18 @@ public class IccSmsInterfaceManager {
          * @return true if successful, false otherwise
          */
         protected boolean finishUpdate() {
+            // MTK-START
+            // Google issue: Can't remove the last channel id because mConfigList is empty!
             if (mConfigList.isEmpty()) {
-                return true;
+                //return true;
+                SmsBroadcastConfigInfo[] configs = new SmsBroadcastConfigInfo[0];
+                return setCellBroadcastConfig(configs);
             } else {
                 SmsBroadcastConfigInfo[] configs =
                         mConfigList.toArray(new SmsBroadcastConfigInfo[mConfigList.size()]);
                 return setCellBroadcastConfig(configs);
             }
+            // MTK-END
         }
     }
 
@@ -998,7 +1015,10 @@ public class IccSmsInterfaceManager {
         return mSuccess;
     }
 
-    private boolean setCellBroadcastActivation(boolean activate) {
+    // MTK-START
+    // Modification for sub class
+    protected boolean setCellBroadcastActivation(boolean activate) {
+    // MTK-END
         if (DBG)
             log("Calling setCellBroadcastActivation(" + activate + ')');
 

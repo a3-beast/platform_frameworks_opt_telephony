@@ -38,15 +38,23 @@ import java.io.PrintWriter;
  * {@hide}
  */
 public class UiccCardApplication {
-    private static final String LOG_TAG = "UiccCardApplication";
+    // MTK-START: add on
+    protected static final String LOG_TAG = "UiccCardApplication";
+    // MTK-END
     private static final boolean DBG = true;
 
-    private static final int EVENT_PIN1_PUK1_DONE = 1;
+    // MTK-START: add on
+    protected static final int EVENT_PIN1_PUK1_DONE = 1;
+    // MTK-END
     private static final int EVENT_CHANGE_PIN1_DONE = 2;
     private static final int EVENT_CHANGE_PIN2_DONE = 3;
-    private static final int EVENT_QUERY_FACILITY_FDN_DONE = 4;
+    // MTK-START: add on
+    protected static final int EVENT_QUERY_FACILITY_FDN_DONE = 4;
+    // MTK-END
     private static final int EVENT_CHANGE_FACILITY_FDN_DONE = 5;
-    private static final int EVENT_QUERY_FACILITY_LOCK_DONE = 6;
+    // MTK-START: add on
+    protected static final int EVENT_QUERY_FACILITY_LOCK_DONE = 6;
+    // MTK-END
     private static final int EVENT_CHANGE_FACILITY_LOCK_DONE = 7;
     private static final int EVENT_PIN2_PUK2_DONE = 8;
     private static final int EVENT_RADIO_UNAVAILABLE = 9;
@@ -58,18 +66,22 @@ public class UiccCardApplication {
     public static final int AUTH_CONTEXT_EAP_AKA = PhoneConstants.AUTH_CONTEXT_EAP_AKA;
     public static final int AUTH_CONTEXT_UNDEFINED = PhoneConstants.AUTH_CONTEXT_UNDEFINED;
 
-    private final Object  mLock = new Object();
+    // MTK-START: add on
+    protected final Object  mLock = new Object();
+    // MTK-END
     private UiccProfile   mUiccProfile; //parent
-    private AppState      mAppState;
-    private AppType       mAppType;
-    private int           mAuthContext;
-    private PersoSubState mPersoSubState;
-    private String        mAid;
-    private String        mAppLabel;
-    private boolean       mPin1Replaced;
-    private PinState      mPin1State;
-    private PinState      mPin2State;
-    private boolean       mIccFdnEnabled;
+    // MTK-START: add on
+    protected AppState      mAppState;
+    protected AppType       mAppType;
+    protected int           mAuthContext;
+    protected PersoSubState mPersoSubState;
+    protected String        mAid;
+    protected String        mAppLabel;
+    protected boolean       mPin1Replaced;
+    protected PinState      mPin1State;
+    protected PinState      mPin2State;
+    protected boolean       mIccFdnEnabled;
+    // MTK-END
     private boolean       mDesiredFdnEnabled;
     private boolean       mIccLockEnabled;
     private boolean       mDesiredPinLocked;
@@ -78,16 +90,22 @@ public class UiccCardApplication {
     private boolean       mIgnoreApp;
     private boolean       mIccFdnAvailable = true; // Default is enabled.
 
-    private CommandsInterface mCi;
-    private Context mContext;
-    private IccRecords mIccRecords;
-    private IccFileHandler mIccFh;
+    // MTK-START: add on
+    protected CommandsInterface mCi;
+    protected Context mContext;
+    protected IccRecords mIccRecords;
+    protected IccFileHandler mIccFh;
+    // MTK-END
 
-    private boolean mDestroyed;//set to true once this App is commanded to be disposed of.
+    // MTK-START: add on
+    protected boolean mDestroyed;//set to true once this App is commanded to be disposed of.
+    // MTK-END
 
     private RegistrantList mReadyRegistrants = new RegistrantList();
     private RegistrantList mPinLockedRegistrants = new RegistrantList();
-    private RegistrantList mNetworkLockedRegistrants = new RegistrantList();
+    // MTK-START: add on
+    protected RegistrantList mNetworkLockedRegistrants = new RegistrantList();
+    // MTK-END
 
     public UiccCardApplication(UiccProfile uiccProfile,
                         IccCardApplicationStatus as,
@@ -149,7 +167,8 @@ public class UiccCardApplication {
             }
 
             if (mPersoSubState != oldPersoSubState &&
-                    mPersoSubState == PersoSubState.PERSOSUBSTATE_SIM_NETWORK) {
+                    (mPersoSubState == PersoSubState.PERSOSUBSTATE_SIM_NETWORK ||
+                    supportExtendedMeLockCategory())) {
                 notifyNetworkLockedRegistrantsIfNeeded(null);
             }
 
@@ -179,7 +198,9 @@ public class UiccCardApplication {
         }
     }
 
-    private IccRecords createIccRecords(AppType type, Context c, CommandsInterface ci) {
+    // MTK-START: add on
+    protected IccRecords createIccRecords(AppType type, Context c, CommandsInterface ci) {
+    // MTK-END
         if (type == AppType.APPTYPE_USIM || type == AppType.APPTYPE_SIM) {
             return new SIMRecords(this, c, ci);
         } else if (type == AppType.APPTYPE_RUIM || type == AppType.APPTYPE_CSIM){
@@ -192,7 +213,9 @@ public class UiccCardApplication {
         }
     }
 
-    private IccFileHandler createIccFileHandler(AppType type) {
+    // MTK-START: add on
+    protected IccFileHandler createIccFileHandler(AppType type) {
+    // MTK-END
         switch (type) {
             case APPTYPE_SIM:
                 return new SIMFileHandler(this, mAid, mCi);
@@ -250,7 +273,9 @@ public class UiccCardApplication {
         }
     }
 
-    private void onChangeFdnDone(AsyncResult ar) {
+    // MTK-START: add on
+    protected void onChangeFdnDone(AsyncResult ar) {
+    // MTK-END
         synchronized (mLock) {
             int attemptsRemaining = -1;
 
@@ -270,7 +295,9 @@ public class UiccCardApplication {
     }
 
     /** REMOVE when mIccLockEnabled is not needed, assumes mLock is held */
-    private void queryPin1State() {
+    // MTK-START: add on
+    protected void queryPin1State() {
+    // MTK-END
         int serviceClassX = CommandsInterface.SERVICE_CLASS_VOICE +
                 CommandsInterface.SERVICE_CLASS_DATA +
                 CommandsInterface.SERVICE_CLASS_FAX;
@@ -294,7 +321,9 @@ public class UiccCardApplication {
                 mIccLockEnabled = (ints[0] != 0);
 
                 if (mIccLockEnabled) {
-                    mPinLockedRegistrants.notifyRegistrants();
+                    // MTK-START: add on
+                    notifyPinLockStatus();
+                    // MTK-END
                 }
 
                 // Sanity check: we expect mPin1State to match mIccLockEnabled.
@@ -352,7 +381,9 @@ public class UiccCardApplication {
     /**
      * Parse the error response to obtain number of attempts remaining
      */
-    private int parsePinPukErrorResult(AsyncResult ar) {
+    // MTK-START: add on
+    protected int parsePinPukErrorResult(AsyncResult ar) {
+    // MTK-END
         int[] result = (int[]) ar.result;
         if (result == null) {
             return -1;
@@ -367,7 +398,9 @@ public class UiccCardApplication {
         }
     }
 
-    private Handler mHandler = new Handler() {
+    // MTK-START: add on
+    protected Handler mHandler = new Handler() {
+    // MTK-ENd
         @Override
         public void handleMessage(Message msg){
             AsyncResult ar;
@@ -471,7 +504,9 @@ public class UiccCardApplication {
      *
      * @param r Registrant to be notified. If null - all registrants will be notified
      */
-    private void notifyReadyRegistrantsIfNeeded(Registrant r) {
+    // MTK-START: add on
+    protected void notifyReadyRegistrantsIfNeeded(Registrant r) {
+    // MTK-END
         if (mDestroyed) {
             return;
         }
@@ -498,7 +533,9 @@ public class UiccCardApplication {
      *
      * @param r Registrant to be notified. If null - all registrants will be notified
      */
-    private void notifyPinLockedRegistrantsIfNeeded(Registrant r) {
+    // MTK-START: add on
+    protected void notifyPinLockedRegistrantsIfNeeded(Registrant r) {
+    // MTK-END
         if (mDestroyed) {
             return;
         }
@@ -526,7 +563,9 @@ public class UiccCardApplication {
      *
      * @param r Registrant to be notified. If null - all registrants will be notified
      */
-    private void notifyNetworkLockedRegistrantsIfNeeded(Registrant r) {
+    // MTK-START: add on
+    protected void notifyNetworkLockedRegistrantsIfNeeded(Registrant r) {
+    // MTK-END
         if (mDestroyed) {
             return;
         }
@@ -890,13 +929,29 @@ public class UiccCardApplication {
         return mUiccProfile;
     }
 
-    private void log(String msg) {
+    // MTK-START: add on
+    protected void log(String msg) {
+    // MTK-END
         Rlog.d(LOG_TAG, msg);
     }
 
-    private void loge(String msg) {
+    // MTK-START: add on
+    protected void loge(String msg) {
+    // MTK-END
         Rlog.e(LOG_TAG, msg);
     }
+
+    //MTK START: add-on
+    protected boolean supportExtendedMeLockCategory() {
+        return false;
+    }
+    //MTK END
+
+    // MTK-START: add on
+    protected void notifyPinLockStatus() {
+        mPinLockedRegistrants.notifyRegistrants();
+    }
+    // MTK-END
 
     public void dump(FileDescriptor fd, PrintWriter pw, String[] args) {
         pw.println("UiccCardApplication: " + this);

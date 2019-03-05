@@ -25,8 +25,9 @@ import android.content.res.Resources.NotFoundException;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
-
-abstract class ValueParser {
+// MTK-START
+public abstract class ValueParser {
+// MTK-END
 
     /**
      * Search for a Command Details object from a list.
@@ -36,7 +37,8 @@ abstract class ValueParser {
      *         Command Details object is found, ResultException is thrown.
      * @throws ResultException
      */
-    static CommandDetails retrieveCommandDetails(ComprehensionTlv ctlv)
+     // MTK-START
+     public static CommandDetails retrieveCommandDetails(ComprehensionTlv ctlv)
             throws ResultException {
 
         CommandDetails cmdDet = new CommandDetails();
@@ -61,8 +63,10 @@ abstract class ValueParser {
      *         Command Details object is found, ResultException is thrown.
      * @throws ResultException
      */
-    static DeviceIdentities retrieveDeviceIdentities(ComprehensionTlv ctlv)
+    // MTK-START
+    public static DeviceIdentities retrieveDeviceIdentities(ComprehensionTlv ctlv)
             throws ResultException {
+    // MTK-END
 
         DeviceIdentities devIds = new DeviceIdentities();
         byte[] rawValue = ctlv.getRawValue();
@@ -84,7 +88,9 @@ abstract class ValueParser {
      * @return A Duration object
      * @throws ResultException
      */
-    static Duration retrieveDuration(ComprehensionTlv ctlv) throws ResultException {
+    // MTK-START
+    public static Duration retrieveDuration(ComprehensionTlv ctlv) throws ResultException {
+    // MTK-END
         int timeInterval = 0;
         TimeUnit timeUnit = TimeUnit.SECOND;
 
@@ -137,7 +143,9 @@ abstract class ValueParser {
      * @return An Item id
      * @throws ResultException
      */
-    static int retrieveItemId(ComprehensionTlv ctlv) throws ResultException {
+     // MTK-START
+     public static int retrieveItemId(ComprehensionTlv ctlv) throws ResultException {
+     // MTK-END
         int id = 0;
 
         byte[] rawValue = ctlv.getRawValue();
@@ -159,7 +167,9 @@ abstract class ValueParser {
      * @return IconId instance
      * @throws ResultException
      */
-    static IconId retrieveIconId(ComprehensionTlv ctlv) throws ResultException {
+     // MTK-START
+     public static IconId retrieveIconId(ComprehensionTlv ctlv) throws ResultException {
+     // MTK-END
         IconId id = new IconId();
 
         byte[] rawValue = ctlv.getRawValue();
@@ -182,8 +192,10 @@ abstract class ValueParser {
      * @return ItemsIconId instance
      * @throws ResultException
      */
-    static ItemsIconId retrieveItemsIconId(ComprehensionTlv ctlv)
+     // MTK-START
+     public static ItemsIconId retrieveItemsIconId(ComprehensionTlv ctlv)
             throws ResultException {
+     // MTK-END
         CatLog.d("ValueParser", "retrieveItemsIconId:");
         ItemsIconId id = new ItemsIconId();
 
@@ -213,8 +225,10 @@ abstract class ValueParser {
      * @return A list of TextAttribute objects
      * @throws ResultException
      */
-    static List<TextAttribute> retrieveTextAttribute(ComprehensionTlv ctlv)
+    // MTK-START
+    public static List<TextAttribute> retrieveTextAttribute(ComprehensionTlv ctlv)
             throws ResultException {
+    // MTK-END
         ArrayList<TextAttribute> lst = new ArrayList<TextAttribute>();
 
         byte[] rawValue = ctlv.getRawValue();
@@ -273,7 +287,9 @@ abstract class ValueParser {
      * @return String corresponding to the alpha identifier
      * @throws ResultException
      */
-    static String retrieveAlphaId(ComprehensionTlv ctlv) throws ResultException {
+    // MTK-START
+    public static String retrieveAlphaId(ComprehensionTlv ctlv) throws ResultException {
+    // MTK-END
 
         if (ctlv != null) {
             byte[] rawValue = ctlv.getRawValue();
@@ -316,7 +332,9 @@ abstract class ValueParser {
      * @return A Java String object decoded from the Text object
      * @throws ResultException
      */
-    static String retrieveTextString(ComprehensionTlv ctlv) throws ResultException {
+    // MTK-START
+    public static String retrieveTextString(ComprehensionTlv ctlv) throws ResultException {
+    // MTK-END
         byte[] rawValue = ctlv.getRawValue();
         int valueIndex = ctlv.getValueIndex();
         byte codingScheme = 0x00;

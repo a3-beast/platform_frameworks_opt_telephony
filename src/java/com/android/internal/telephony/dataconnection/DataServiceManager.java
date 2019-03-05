@@ -63,7 +63,7 @@ public class DataServiceManager {
     private static final String TAG = DataServiceManager.class.getSimpleName();
     private static final boolean DBG = false;
 
-    static final String DATA_CALL_RESPONSE = "data_call_response";
+    public static final String DATA_CALL_RESPONSE = "data_call_response";
 
     private final Phone mPhone;
 

@@ -225,7 +225,10 @@ public class ImsExternalCallTracker implements ImsPhoneCallTracker.PhoneStateLis
     private void unregisterForNotifications() {
         if (mPhone != null) {
             Log.d(TAG, "Unregistering: " + mPhone);
-            mPhone.unregisterForVideoCapabilityChanged(mHandler);
+            /// M: ALPS03128151, memory leak. @{
+            // mPhone.unregisterForVideoCapabilityChanged(mHandler);
+            mPhone.getDefaultPhone().unregisterForVideoCapabilityChanged(mHandler);
+            /// @}
         }
     }
 

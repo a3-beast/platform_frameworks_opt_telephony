@@ -20,6 +20,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import com.android.internal.telephony.CommandsInterface;
 import com.android.internal.telephony.Phone;
+// MTK-START: add on
+import com.android.internal.telephony.TelephonyComponentFactory;
+// MTK-END
 import android.content.Context;
 import android.os.AsyncResult;
 import android.os.Handler;
@@ -59,7 +62,9 @@ public class CdmaSubscriptionSourceManager extends Handler {
             new AtomicInteger(Phone.PREFERRED_CDMA_SUBSCRIPTION);
 
     // Constructor
-    private CdmaSubscriptionSourceManager(Context context, CommandsInterface ci) {
+    // MTK-START: add on
+    public /*private*/ CdmaSubscriptionSourceManager(Context context, CommandsInterface ci) {
+    // MTK-END
         mCi = ci;
         mCi.registerForCdmaSubscriptionChanged(this, EVENT_CDMA_SUBSCRIPTION_SOURCE_CHANGED, null);
         mCi.registerForOn(this, EVENT_RADIO_ON, null);
@@ -78,7 +83,11 @@ public class CdmaSubscriptionSourceManager extends Handler {
             CommandsInterface ci, Handler h, int what, Object obj) {
         synchronized (sReferenceCountMonitor) {
             if (null == sInstance) {
-                sInstance = new CdmaSubscriptionSourceManager(context, ci);
+                // MTK-START: add on
+                //sInstance = new CdmaSubscriptionSourceManager(context, ci);
+                sInstance = TelephonyComponentFactory.getInstance()
+                        .makeCdmaSubscriptionSourceManager(context, ci, h, what, obj);
+                // MTK-END
             }
             CdmaSubscriptionSourceManager.sReferenceCount++;
         }
@@ -98,6 +107,9 @@ public class CdmaSubscriptionSourceManager extends Handler {
                 mCi.unregisterForOn(this);
                 mCi.unregisterForSubscriptionStatusChanged(this);
                 sInstance = null;
+                // MTK-START: add on
+                setActStatus(0);
+                // MTK-END
             }
         }
     }
@@ -128,6 +140,9 @@ public class CdmaSubscriptionSourceManager extends Handler {
                 if (ar.exception == null) {
                     int actStatus = ((int[])ar.result)[0];
                     log("actStatus = " + actStatus);
+                    // MTK-START: add on
+                    setActStatus(actStatus);
+                    // MTK-END
                     if (actStatus == SUBSCRIPTION_ACTIVATED) { // Subscription Activated
                         // In case of multi-SIM, framework should wait for the subscription ready
                         // to send any request to RIL.  Otherwise it will return failure.
@@ -210,4 +225,7 @@ public class CdmaSubscriptionSourceManager extends Handler {
         Rlog.w(LOG_TAG, s);
     }
 
+    // MTK-START: add on
+    protected void setActStatus(int status) {}
+    // MTK-END
 }

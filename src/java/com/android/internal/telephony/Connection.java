@@ -107,7 +107,6 @@ public abstract class Connection {
         public void onDisconnect(int cause);
         public void onRttInitiated();
         public void onRttTerminated();
-        public void onOriginalConnectionReplaced(Connection newConnection);
     }
 
     /**
@@ -153,8 +152,6 @@ public abstract class Connection {
         public void onRttInitiated() {}
         @Override
         public void onRttTerminated() {}
-        @Override
-        public void onOriginalConnectionReplaced(Connection newConnection) {}
     }
 
     public static final int AUDIO_QUALITY_STANDARD = 1;
@@ -198,7 +195,7 @@ public abstract class Connection {
     protected String mPostDialString;      // outgoing calls only
     protected int mNextPostDialChar;       // index into postDialString
 
-    protected int mCause = DisconnectCause.NOT_DISCONNECTED;
+    public int mCause = DisconnectCause.NOT_DISCONNECTED;
     protected PostDialState mPostDialState = PostDialState.NOT_STARTED;
 
     private static String LOG_TAG = "Connection";
@@ -1025,11 +1022,6 @@ public abstract class Connection {
         }
     }
 
-    public void onOriginalConnectionReplaced(Connection newConnection) {
-        for (Listener l : mListeners) {
-            l.onOriginalConnectionReplaced(newConnection);
-        }
-    }
     /**
      * Notifies the connection that there was a failure while handing over to WIFI.
      */

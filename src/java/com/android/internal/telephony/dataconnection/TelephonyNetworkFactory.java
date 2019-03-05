@@ -45,16 +45,16 @@ public class TelephonyNetworkFactory extends NetworkFactory {
     private final PhoneSwitcher mPhoneSwitcher;
     private final SubscriptionController mSubscriptionController;
     private final SubscriptionMonitor mSubscriptionMonitor;
-    private final DcTracker mDcTracker;
+    protected final DcTracker mDcTracker;
 
-    private final HashMap<NetworkRequest, LocalLog> mDefaultRequests =
+    protected final HashMap<NetworkRequest, LocalLog> mDefaultRequests =
             new HashMap<NetworkRequest, LocalLog>();
-    private final HashMap<NetworkRequest, LocalLog> mSpecificRequests =
+    protected final HashMap<NetworkRequest, LocalLog> mSpecificRequests =
             new HashMap<NetworkRequest, LocalLog>();
 
     private int mPhoneId;
-    private boolean mIsActive;
-    private boolean mIsDefault;
+    protected boolean mIsActive;
+    protected boolean mIsDefault;
     private int mSubscriptionId;
 
     private final static int TELEPHONY_NETWORK_SCORE = 50;
@@ -103,7 +103,7 @@ public class TelephonyNetworkFactory extends NetworkFactory {
         return makeNetworkFilter(subscriptionId);
     }
 
-    private NetworkCapabilities makeNetworkFilter(int subscriptionId) {
+    protected NetworkCapabilities makeNetworkFilter(int subscriptionId) {
         NetworkCapabilities nc = new NetworkCapabilities();
         nc.addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR);
         nc.addCapability(NetworkCapabilities.NET_CAPABILITY_MMS);
@@ -154,13 +154,17 @@ public class TelephonyNetworkFactory extends NetworkFactory {
         }
     }
 
-    private static final int REQUEST_LOG_SIZE = 40;
-    private static final boolean REQUEST = true;
-    private static final boolean RELEASE = false;
+    protected static final int REQUEST_LOG_SIZE = 40;
+    protected static final boolean REQUEST = true;
+    protected static final boolean RELEASE = false;
 
-    private void applyRequests(HashMap<NetworkRequest, LocalLog> requestMap, boolean action,
+    protected void applyRequests(HashMap<NetworkRequest, LocalLog> requestMap, boolean action,
             String logStr) {
         for (NetworkRequest networkRequest : requestMap.keySet()) {
+            if (ignoreCapabilityCheck(networkRequest.networkCapabilities, action)) {
+                continue;
+            }
+
             LocalLog localLog = requestMap.get(networkRequest);
             localLog.log(logStr);
             if (action == REQUEST) {
@@ -218,7 +222,7 @@ public class TelephonyNetworkFactory extends NetworkFactory {
         msg.sendToTarget();
     }
 
-    private void onNeedNetworkFor(Message msg) {
+    protected void onNeedNetworkFor(Message msg) {
         NetworkRequest networkRequest = (NetworkRequest)msg.obj;
         boolean isApplicable = false;
         LocalLog localLog = null;
@@ -239,7 +243,8 @@ public class TelephonyNetworkFactory extends NetworkFactory {
                 isApplicable = true;
             }
         }
-        if (mIsActive && isApplicable) {
+        if (mIsActive && isApplicable
+                || (ignoreCapabilityCheck(networkRequest.networkCapabilities, REQUEST))) {
             String s = "onNeedNetworkFor";
             localLog.log(s);
             log(s + " " + networkRequest);
@@ -258,7 +263,7 @@ public class TelephonyNetworkFactory extends NetworkFactory {
         msg.sendToTarget();
     }
 
-    private void onReleaseNetworkFor(Message msg) {
+    protected void onReleaseNetworkFor(Message msg) {
         NetworkRequest networkRequest = (NetworkRequest)msg.obj;
         LocalLog localLog = null;
         boolean isApplicable = false;
@@ -270,7 +275,8 @@ public class TelephonyNetworkFactory extends NetworkFactory {
             localLog = mSpecificRequests.remove(networkRequest);
             isApplicable = (localLog != null);
         }
-        if (mIsActive && isApplicable) {
+        if (mIsActive && isApplicable
+                || (ignoreCapabilityCheck(networkRequest.networkCapabilities, RELEASE))) {
             String s = "onReleaseNetworkFor";
             localLog.log(s);
             log(s + " " + networkRequest);
@@ -299,5 +305,14 @@ public class TelephonyNetworkFactory extends NetworkFactory {
             pw.decreaseIndent();
         }
         pw.decreaseIndent();
+    }
+
+    /**
+     * Anchor method  to execute the special request even if the TNF not active phone.
+     * @param capabilities used to check the network should be controlled by mIsActive or not.
+     * @return true if the network doesn't need to be controlled by mIsActive.
+     */
+    protected boolean ignoreCapabilityCheck(NetworkCapabilities capabilities, boolean action) {
+        return false;
     }
 }

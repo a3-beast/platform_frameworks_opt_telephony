@@ -18,6 +18,8 @@ package com.android.internal.telephony;
 
 import android.telephony.Rlog;
 
+import java.lang.reflect.Method;
+
 import com.android.internal.telephony.Phone;
 
 /**
@@ -45,6 +47,17 @@ public class TelephonyCapabilities {
      * otherwise.
      */
     public static boolean supportsEcm(Phone phone) {
+        try {
+            Class clazz = Class.forName("com.mediatek.internal.telephony.MtkTelephonyCapabilities");
+            Class[] argTypes = new Class[] { Phone.class };
+            Method m = clazz.getDeclaredMethod("supportsEcm", argTypes);
+            Object[] params = { phone };
+            return (boolean)m.invoke(null, params);
+        } catch (Exception e) {
+            e.printStackTrace();
+            Rlog.e(LOG_TAG, "supportsEcm invoke redirect fails. Use AOSP instead.");
+        }
+
         Rlog.d(LOG_TAG, "supportsEcm: Phone type = " + phone.getPhoneType() +
                   " Ims Phone = " + phone.getImsPhone());
         return (phone.getPhoneType() == PhoneConstants.PHONE_TYPE_CDMA ||

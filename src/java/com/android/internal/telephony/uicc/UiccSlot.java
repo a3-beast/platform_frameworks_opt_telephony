@@ -88,7 +88,9 @@ public class UiccSlot extends Handler {
 
             RadioState radioState = mCi.getRadioState();
             if (DBG) {
-                log("update: radioState=" + radioState + " mLastRadioState=" + mLastRadioState);
+                log("update: radioState=" + radioState + " mLastRadioState=" + mLastRadioState +
+                       " oldState=" + oldState + " mCardState=" + mCardState + " mPhoneId=" +
+                       mPhoneId);
             }
 
             if (absentStateUpdateNeeded(oldState)) {
@@ -368,7 +370,7 @@ public class UiccSlot extends Handler {
                     IccCardConstants.INTENT_VALUE_ICC_UNKNOWN, null, mPhoneId);
         }
 
-        mCardState = CardState.CARDSTATE_ABSENT;
+        mCardState = null;
         mLastRadioState = RadioState.RADIO_UNAVAILABLE;
     }
 

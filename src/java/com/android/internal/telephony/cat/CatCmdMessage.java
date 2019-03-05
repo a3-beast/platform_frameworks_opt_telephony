@@ -26,15 +26,17 @@ import android.os.Parcelable;
  */
 public class CatCmdMessage implements Parcelable {
     // members
-    CommandDetails mCmdDet;
-    private TextMessage mTextMsg;
-    private Menu mMenu;
-    private Input mInput;
-    private BrowserSettings mBrowserSettings = null;
-    private ToneSettings mToneSettings = null;
-    private CallSettings mCallSettings = null;
-    private SetupEventListSettings mSetupEventListSettings = null;
-    private boolean mLoadIconFailed = false;
+    // MTK-STRAT
+    public CommandDetails mCmdDet;
+    public /*private*/ TextMessage mTextMsg;
+    public /*private*/ Menu mMenu;
+    public /*private*/ Input mInput;
+    public /*private*/ BrowserSettings mBrowserSettings = null;
+    public /*private*/ ToneSettings mToneSettings = null;
+    public /*private*/ CallSettings mCallSettings = null;
+    public /*private*/ SetupEventListSettings mSetupEventListSettings = null;
+    public /*private*/ boolean mLoadIconFailed = false;
+    // MTK-END
 
     /*
      * Container for Launch Browser command settings.
@@ -70,7 +72,9 @@ public class CatCmdMessage implements Parcelable {
         public static final int ERROR_TERMINATION            = 0x01;
     }
 
-    CatCmdMessage(CommandParams cmdParams) {
+    // MTK-STRAT
+    public CatCmdMessage(CommandParams cmdParams) {
+    // MTK-END
         mCmdDet = cmdParams.mCmdDet;
         mLoadIconFailed =  cmdParams.mLoadIconFailed;
         switch(getCmdType()) {

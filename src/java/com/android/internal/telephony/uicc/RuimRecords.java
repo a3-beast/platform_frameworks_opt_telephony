@@ -61,7 +61,9 @@ public class RuimRecords extends IccRecords {
     // From CSIM application
     private byte[] mEFpl = null;
     private byte[] mEFli = null;
-    boolean mCsimSpnDisplayCondition = false;
+    // MTK-START: add on
+    protected boolean mCsimSpnDisplayCondition = false;
+    // MTK-END
     private String mMdn;
     private String mMin;
     private String mHomeSystemId;
@@ -90,14 +92,17 @@ public class RuimRecords extends IccRecords {
     private static final int EVENT_GET_ICCID_DONE = 5;
     private static final int EVENT_GET_CDMA_SUBSCRIPTION_DONE = 10;
     private static final int EVENT_UPDATE_DONE = 14;
-    private static final int EVENT_GET_SST_DONE = 17;
+    // MTK-START
+    protected /*private*/ static final int EVENT_GET_SST_DONE = 17;
+    // MTK-END
     private static final int EVENT_GET_ALL_SMS_DONE = 18;
     private static final int EVENT_MARK_SMS_READ_DONE = 19;
 
     private static final int EVENT_SMS_ON_RUIM = 21;
     private static final int EVENT_GET_SMS_DONE = 22;
-
-    private static final int EVENT_APP_LOCKED = 32;
+    // MTK-START
+    protected /*private*/ static final int EVENT_APP_LOCKED = 32;
+    // MTK-END
     private static final int EVENT_APP_NETWORK_LOCKED = 33;
 
     public RuimRecords(UiccCardApplication app, Context c, CommandsInterface ci) {
@@ -652,7 +657,9 @@ public class RuimRecords extends IccRecords {
                     String operatorNumeric = getRUIMOperatorNumeric();
                     log("NO update mccmnc=" + operatorNumeric);
                 }
-
+                // MTK-START: add on
+                onGetImsiDone(mImsi);
+                // MTK-END
             break;
 
             case EVENT_GET_CDMA_SUBSCRIPTION_DONE:
@@ -778,7 +785,9 @@ public class RuimRecords extends IccRecords {
         // Further records that can be inserted are Operator/OEM dependent
 
         // FIXME: CSIM IMSI may not contain the MNC.
-        if (false) {
+        // MTK-START: add on
+        if (checkCdma3gCard()) {
+        // MTK-END
             String operator = getRUIMOperatorNumeric();
             if (!TextUtils.isEmpty(operator)) {
                 log("onAllRecordsLoaded set 'gsm.sim.operator.numeric' to operator='" +
@@ -830,7 +839,9 @@ public class RuimRecords extends IccRecords {
         mCi.getCDMASubscription(obtainMessage(EVENT_GET_CDMA_SUBSCRIPTION_DONE));
     }
 
-    private void onLocked(int msg) {
+    // MTK-START: add on
+    protected void onLocked(int msg) {
+    // MTK-END
         if (DBG) log("only fetch EF_ICCID in locked state");
         mLockedRecordsReqReason = msg == EVENT_APP_LOCKED ? LOCKED_RECORDS_REQ_REASON_LOCKED :
                 LOCKED_RECORDS_REQ_REASON_NETWORK_LOCKED;
@@ -839,7 +850,9 @@ public class RuimRecords extends IccRecords {
         mRecordsToLoad++;
     }
 
-    private void fetchRuimRecords() {
+    // MTK-START: add on
+    protected /*private*/ void fetchRuimRecords() {
+    // MTK-END
         mRecordsRequested = true;
 
         if (DBG) log("fetchRuimRecords " + mRecordsToLoad);
@@ -991,4 +1004,11 @@ public class RuimRecords extends IccRecords {
         pw.println(" mHomeNetworkId=" + mHomeNetworkId);
         pw.flush();
     }
+
+    // MTK-START: add on
+    protected void onGetImsiDone(String imsi) {}
+    protected boolean checkCdma3gCard() {
+        return false;
+    }
+    // MTK-END
 }

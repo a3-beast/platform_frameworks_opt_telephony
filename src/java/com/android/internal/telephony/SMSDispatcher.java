@@ -47,6 +47,9 @@ import android.database.ContentObserver;
 import android.database.sqlite.SqliteWrapper;
 import android.net.Uri;
 import android.os.AsyncResult;
+// MTK-START
+import android.os.AsyncTask;
+// MTK-END
 import android.os.Binder;
 import android.os.Handler;
 import android.os.Message;
@@ -104,10 +107,13 @@ public abstract class SMSDispatcher extends Handler {
     protected static final String MAP_KEY_DATA = "data";
     protected static final String MAP_KEY_TEXT = "text";
 
-    private static final int PREMIUM_RULE_USE_SIM = 1;
-    private static final int PREMIUM_RULE_USE_NETWORK = 2;
-    private static final int PREMIUM_RULE_USE_BOTH = 3;
-    private final AtomicInteger mPremiumSmsRule = new AtomicInteger(PREMIUM_RULE_USE_SIM);
+    // MTK-START
+    // Modification for sub class
+    protected static final int PREMIUM_RULE_USE_SIM = 1;
+    protected static final int PREMIUM_RULE_USE_NETWORK = 2;
+    protected static final int PREMIUM_RULE_USE_BOTH = 3;
+    protected final AtomicInteger mPremiumSmsRule = new AtomicInteger(PREMIUM_RULE_USE_SIM);
+    // MTK-END
     private final SettingsObserver mSettingsObserver;
 
     /** SMS send complete. */
@@ -117,19 +123,25 @@ public abstract class SMSDispatcher extends Handler {
     private static final int EVENT_SEND_RETRY = 3;
 
     /** Confirmation required for sending a large number of messages. */
-    private static final int EVENT_SEND_LIMIT_REACHED_CONFIRMATION = 4;
+    // MTK-START
+    // Modification for sub class
+    protected static final int EVENT_SEND_LIMIT_REACHED_CONFIRMATION = 4;
+    // MTK-END
 
     /** Send the user confirmed SMS */
     static final int EVENT_SEND_CONFIRMED_SMS = 5;  // accessed from inner class
 
     /** Don't send SMS (user did not confirm). */
-    static final int EVENT_STOP_SENDING = 7;        // accessed from inner class
+    // MTK-START
+    // Modification for sub class
+    protected static final int EVENT_STOP_SENDING = 7;        // accessed from inner class
 
     /** Confirmation required for third-party apps sending to an SMS short code. */
-    private static final int EVENT_CONFIRM_SEND_TO_POSSIBLE_PREMIUM_SHORT_CODE = 8;
+    protected static final int EVENT_CONFIRM_SEND_TO_POSSIBLE_PREMIUM_SHORT_CODE = 8;
 
     /** Confirmation required for third-party apps sending to an SMS short code. */
-    private static final int EVENT_CONFIRM_SEND_TO_PREMIUM_SHORT_CODE = 9;
+    protected static final int EVENT_CONFIRM_SEND_TO_PREMIUM_SHORT_CODE = 9;
+    // MTK-END
 
     /** Handle status report from {@code CdmaInboundSmsHandler}. */
     protected static final int EVENT_HANDLE_STATUS_REPORT = 10;
@@ -147,13 +159,22 @@ public abstract class SMSDispatcher extends Handler {
     protected final TelephonyManager mTelephonyManager;
 
     /** Maximum number of times to retry sending a failed SMS. */
-    private static final int MAX_SEND_RETRIES = 3;
+    // MTK-START
+    // Modification for sub class
+    protected static final int MAX_SEND_RETRIES = 3;
+    // MTK-END
     /** Delay before next send attempt on a failed SMS, in milliseconds. */
     private static final int SEND_RETRY_DELAY = 2000;
     /** single part SMS */
-    private static final int SINGLE_PART_SMS = 1;
+    // MTK-START
+    // Modification for sub class
+    protected static final int SINGLE_PART_SMS = 1;
+    // MTK-END
     /** Message sending queue limit */
-    private static final int MO_MSG_QUEUE_LIMIT = 5;
+    // MTK-START
+    // M: Change visibility for our proprietary class
+    public static final int MO_MSG_QUEUE_LIMIT = 5;
+    // MTK-END
 
     /**
      * Message reference for a CONCATENATED_8_BIT_REFERENCE or
@@ -526,19 +547,31 @@ public abstract class SMSDispatcher extends Handler {
     /**
      * Use the carrier messaging service to send a multipart text SMS.
      */
-    private final class MultipartSmsSender extends CarrierMessagingServiceManager {
+    // MTK-START
+    // Modification for sub class
+    // Change as protected due to child class needs to use it
+    protected final class MultipartSmsSender extends CarrierMessagingServiceManager {
+    // MTK-END
         private final List<String> mParts;
         public final SmsTracker[] mTrackers;
         // Initialized in sendSmsByCarrierApp
         private volatile MultipartSmsSenderCallback mSenderCallback;
 
-        MultipartSmsSender(ArrayList<String> parts, SmsTracker[] trackers) {
+        // MTK-START
+        // Modification for sub class
+        // Change as public due to child class needs to use it
+        public MultipartSmsSender(ArrayList<String> parts, SmsTracker[] trackers) {
+        // MTK-END
             mParts = parts;
             mTrackers = trackers;
         }
 
-        void sendSmsByCarrierApp(String carrierPackageName,
+        // MTK-START
+        // Modification for sub class
+        // Change as public due to child class needs to use it
+        public void sendSmsByCarrierApp(String carrierPackageName,
                                  MultipartSmsSenderCallback senderCallback) {
+        // MTK-END
             mSenderCallback = senderCallback;
             if (!bindToCarrierMessagingService(mContext, carrierPackageName)) {
                 Rlog.e(TAG, "bindService() for carrier messaging service failed");
@@ -569,10 +602,18 @@ public abstract class SMSDispatcher extends Handler {
      * Callback for MultipartSmsSender from the carrier messaging service.
      * Once the result is ready, the carrier messaging service connection is disposed.
      */
-    private final class MultipartSmsSenderCallback extends ICarrierMessagingCallback.Stub {
+    // MTK-START
+    // Modification for sub class
+    // Change as protected due to child class needs to use it
+    protected final class MultipartSmsSenderCallback extends ICarrierMessagingCallback.Stub {
+    // MTK-END
         private final MultipartSmsSender mSmsSender;
 
-        MultipartSmsSenderCallback(MultipartSmsSender smsSender) {
+        // MTK-START
+        // Modification for sub class
+        // Change as public due to child class needs to use it
+        public MultipartSmsSenderCallback(MultipartSmsSender smsSender) {
+        // MTK-END
             mSmsSender = smsSender;
         }
 
@@ -627,7 +668,10 @@ public abstract class SMSDispatcher extends Handler {
     /**
      * Send an SMS PDU. Usually just calls {@link sendRawPdu}.
      */
-    private void sendSubmitPdu(SmsTracker tracker) {
+    // MTK-START
+    // M: Change visibility for our proprietary class
+    protected void sendSubmitPdu(SmsTracker tracker) {
+    // MTK-END
         if (shouldBlockSmsForEcbm()) {
             Rlog.d(TAG, "Block SMS in Emergency Callback mode");
             tracker.onFailed(mContext, SmsManager.RESULT_ERROR_NO_SERVICE, 0/*errorCode*/);
@@ -781,8 +825,14 @@ public abstract class SMSDispatcher extends Handler {
      */
     protected void sendData(String destAddr, String scAddr, int destPort,
             byte[] data, PendingIntent sentIntent, PendingIntent deliveryIntent) {
+        // MTK-START: Add a hook for sendData
+        /*
         SmsMessageBase.SubmitPduBase pdu = getSubmitPdu(
                 scAddr, destAddr, destPort, data, (deliveryIntent != null));
+        */
+        SmsMessageBase.SubmitPduBase pdu = onSendData(
+                destAddr, scAddr, destPort, data, sentIntent, deliveryIntent);
+        // MTK-END
         if (pdu != null) {
             HashMap map = getSmsTrackerMap(destAddr, scAddr, destPort, data, pdu);
             SmsTracker tracker = getSmsTracker(map, sentIntent, deliveryIntent, getFormat(),
@@ -849,8 +899,15 @@ public abstract class SMSDispatcher extends Handler {
                          String callingPkg, boolean persistMessage, int priority,
                          boolean expectMore, int validityPeriod) {
         Rlog.d(TAG, "sendText");
+        // MTK-START: Add a hook for sendText
+        /*
         SmsMessageBase.SubmitPduBase pdu = getSubmitPdu(
                 scAddr, destAddr, text, (deliveryIntent != null), null, priority, validityPeriod);
+        */
+        SmsMessageBase.SubmitPduBase pdu = onSendText(
+                destAddr, scAddr, text, sentIntent, deliveryIntent, messageUri,
+                callingPkg, persistMessage, priority, expectMore, validityPeriod);
+        // MTK-END
         if (pdu != null) {
             HashMap map = getSmsTrackerMap(destAddr, scAddr, text, pdu);
             SmsTracker tracker = getSmsTracker(map, sentIntent, deliveryIntent, getFormat(),
@@ -876,7 +933,10 @@ public abstract class SMSDispatcher extends Handler {
         }
     }
 
-    private boolean sendSmsByCarrierApp(boolean isDataSms, SmsTracker tracker ) {
+    // MTK-START
+    // M: Change visibility for our proprietary class
+    protected boolean sendSmsByCarrierApp(boolean isDataSms, SmsTracker tracker ) {
+    // MTK-END
         String carrierPackage = getCarrierAppPackageName();
         if (carrierPackage != null) {
             Rlog.d(TAG, "Found carrier package.");
@@ -966,6 +1026,8 @@ public abstract class SMSDispatcher extends Handler {
         int encoding = SmsConstants.ENCODING_UNKNOWN;
 
         TextEncodingDetails[] encodingForParts = new TextEncodingDetails[msgCount];
+        // MTK-START: Add a hook for sendMultipartText
+        /*
         for (int i = 0; i < msgCount; i++) {
             TextEncodingDetails details = calculateLength(parts.get(i), false);
             if (encoding != details.codeUnitSize
@@ -975,7 +1037,11 @@ public abstract class SMSDispatcher extends Handler {
             }
             encodingForParts[i] = details;
         }
-
+        */
+        encoding = onSendMultipartText(destAddr, scAddr, parts, sentIntents, deliveryIntents,
+                messageUri, callingPkg, persistMessage, priority, expectMore, validityPeriod,
+                encodingForParts);
+        // MTK-END
         SmsTracker[] trackers = new SmsTracker[msgCount];
 
         // States to track at the message level (for all parts)
@@ -994,7 +1060,10 @@ public abstract class SMSDispatcher extends Handler {
             // Note:  It's not sufficient to just flip this bit to true; it will have
             // ripple effects (several calculations assume 8-bit ref).
             concatRef.isEightBits = true;
-            SmsHeader smsHeader = new SmsHeader();
+            // MTK-START
+            // Modification for sub class
+            SmsHeader smsHeader = TelephonyComponentFactory.getInstance().makeSmsHeader();
+            // MTK-END
             smsHeader.concatRef = concatRef;
 
             // Set the national language tables for 3GPP 7-bit encoding, if enabled.
@@ -1048,12 +1117,17 @@ public abstract class SMSDispatcher extends Handler {
     /**
      * Create a new SubmitPdu and return the SMS tracker.
      */
-    private SmsTracker getNewSubmitPduTracker(String destinationAddress, String scAddress,
+    // MTK-START
+    // Change visibility for sub class
+    protected SmsTracker getNewSubmitPduTracker(String destinationAddress, String scAddress,
             String message, SmsHeader smsHeader, int encoding,
             PendingIntent sentIntent, PendingIntent deliveryIntent, boolean lastPart,
             AtomicInteger unsentPartCount, AtomicBoolean anyPartFailed, Uri messageUri,
             String fullMessageText, int priority, boolean expectMore, int validityPeriod) {
+    // MTK-END
         if (isCdmaMo()) {
+            // MTK-START: a hook for getNewSubmitPduTracker
+            /*
             UserData uData = new UserData();
             uData.payloadStr = message;
             uData.userDataHeader = smsHeader;
@@ -1063,15 +1137,24 @@ public abstract class SMSDispatcher extends Handler {
                 uData.msgEncoding = UserData.ENCODING_UNICODE_16;
             }
             uData.msgEncodingSet = true;
+            */
 
             /* By setting the statusReportRequested bit only for the
              * last message fragment, this will result in only one
              * callback to the sender when that last fragment delivery
              * has been acknowledged. */
             //TODO FIX
+            /*
             SmsMessageBase.SubmitPduBase submitPdu =
                     com.android.internal.telephony.cdma.SmsMessage.getSubmitPdu(destinationAddress,
                             uData, (deliveryIntent != null) && lastPart, priority);
+             */
+            SmsMessageBase.SubmitPduBase submitPdu = onGetNewSubmitCdmaPduTracker(
+                    destinationAddress, scAddress,
+                    message, smsHeader, encoding, sentIntent, deliveryIntent, lastPart,
+                    unsentPartCount, anyPartFailed, messageUri, fullMessageText, priority,
+                    expectMore, validityPeriod);
+            // MTK-END
 
             HashMap map = getSmsTrackerMap(destinationAddress, scAddress,
                     message, submitPdu);
@@ -1150,6 +1233,10 @@ public abstract class SMSDispatcher extends Handler {
             return;
         }
 
+        // MTK-START
+        packageNames[0] = getPackageNameViaProcessId(packageNames);
+        // MTK-END
+
         // Get package info via packagemanager
         PackageInfo appInfo;
         try {
@@ -1188,7 +1275,10 @@ public abstract class SMSDispatcher extends Handler {
      * @param tracker the tracker for the SMS to send
      * @return true if the destination is approved; false if user confirmation event was sent
      */
-    boolean checkDestination(SmsTracker tracker) {
+    // MTK-START
+    // Modification for sub class
+    protected boolean checkDestination(SmsTracker tracker) {
+    // MTK-END
         if (mContext.checkCallingOrSelfPermission(SEND_SMS_NO_CONFIRMATION)
                 == PackageManager.PERMISSION_GRANTED) {
             return true;            // app is pre-approved to send to short codes
@@ -1196,20 +1286,34 @@ public abstract class SMSDispatcher extends Handler {
             int rule = mPremiumSmsRule.get();
             int smsCategory = SmsUsageMonitor.CATEGORY_NOT_SHORT_CODE;
             if (rule == PREMIUM_RULE_USE_SIM || rule == PREMIUM_RULE_USE_BOTH) {
-                String simCountryIso = mTelephonyManager.getSimCountryIso();
+                // MTK-START
+                // Google issue: We should identify correct sub id instead of using default sub id!
+                String simCountryIso = mTelephonyManager.getSimCountryIso(getSubId());
+                // MTK-END
                 if (simCountryIso == null || simCountryIso.length() != 2) {
                     Rlog.e(TAG, "Can't get SIM country Iso: trying network country Iso");
-                    simCountryIso = mTelephonyManager.getNetworkCountryIso();
+                    // MTK-START
+                    // Google issue: We should identify correct sub id instead of using default
+                    // sub id!
+                    simCountryIso = mTelephonyManager.getNetworkCountryIso(getSubId());
+                    // MTK-END
                 }
 
                 smsCategory = mSmsDispatchersController.getUsageMonitor().checkDestination(
                         tracker.mDestAddress, simCountryIso);
             }
             if (rule == PREMIUM_RULE_USE_NETWORK || rule == PREMIUM_RULE_USE_BOTH) {
-                String networkCountryIso = mTelephonyManager.getNetworkCountryIso();
+                // MTK-START
+                // Google issue: We should identify correct sub id instead of using default sub id!
+                String networkCountryIso = mTelephonyManager.getNetworkCountryIso(getSubId());
+                // MTK-END
                 if (networkCountryIso == null || networkCountryIso.length() != 2) {
                     Rlog.e(TAG, "Can't get Network country Iso: trying SIM country Iso");
-                    networkCountryIso = mTelephonyManager.getSimCountryIso();
+                    // MTK-START
+                    // Google issue: We should identify correct sub id instead of using default
+                    // sub id!
+                    networkCountryIso = mTelephonyManager.getSimCountryIso(getSubId());
+                    // MTK-END
                 }
 
                 smsCategory = SmsUsageMonitor.mergeShortCodeCategories(smsCategory,
@@ -1413,7 +1517,10 @@ public abstract class SMSDispatcher extends Handler {
      *
      * @param tracker holds the multipart Sms tracker ready to be sent
      */
-    private void sendMultipartSms(SmsTracker tracker) {
+    // MTK-START
+    // Modification for sub class
+    protected void sendMultipartSms(SmsTracker tracker) {
+    // MTK-END
         ArrayList<String> parts;
         ArrayList<PendingIntent> sentIntents;
         ArrayList<PendingIntent> deliveryIntents;
@@ -1452,7 +1559,10 @@ public abstract class SMSDispatcher extends Handler {
      */
     public static class SmsTracker {
         // fields need to be public for derived SmsDispatchers
-        private final HashMap<String, Object> mData;
+        // MTK-START
+        // Modification for sub class
+        public final HashMap<String, Object> mData;
+        // MTK-END
         public int mRetryCount;
         // IMS retry counter. Nonzero indicates initial message was sent over IMS channel in RIL and
         // counts how many retries have been made on the IMS channel.
@@ -1465,7 +1575,10 @@ public abstract class SMSDispatcher extends Handler {
         public boolean mExpectMore;
         public int mValidityPeriod;
         public int mPriority;
-        String mFormat;
+        // MTK-START
+        // Modification for sub class
+        public String mFormat;
+        // MTK-END
 
         public final PendingIntent mSentIntent;
         public final PendingIntent mDeliveryIntent;
@@ -1483,24 +1596,37 @@ public abstract class SMSDispatcher extends Handler {
         private AtomicBoolean mAnyPartFailed;
         // The full message content of a single part message
         // or a multipart message that this part belongs to
-        private String mFullMessageText;
+        // MTK-START
+        // Modification for sub class
+        public String mFullMessageText;
 
-        private int mSubId;
+        public int mSubId;
+        // MTK-END
 
         // If this is a text message (instead of data message)
         private boolean mIsText;
 
-        private boolean mPersistMessage;
+        // MTK-START, in order to access from GsmSMSDispatcher or CdmaSMSDispatcher
+        public boolean mPersistMessage;
 
         // User who sends the SMS.
-        private final @UserIdInt int mUserId;
+        public final @UserIdInt int mUserId;
+        // MTK-END
 
-        private SmsTracker(HashMap<String, Object> data, PendingIntent sentIntent,
+        // MTK-START
+        protected static String PDU_SIZE = "pdu_size";
+        protected static String MSG_REF_NUM = "msg_ref_num";
+        // MTK-END
+
+        // MTK-START
+        // Modification for sub class
+        public SmsTracker(HashMap<String, Object> data, PendingIntent sentIntent,
                 PendingIntent deliveryIntent, PackageInfo appInfo, String destAddr, String format,
                 AtomicInteger unsentPartCount, AtomicBoolean anyPartFailed, Uri messageUri,
                 SmsHeader smsHeader, boolean expectMore, String fullMessageText, int subId,
                 boolean isText, boolean persistMessage, int userId, int priority,
                 int validityPeriod) {
+        // MTK-END
             mData = data;
             mSentIntent = sentIntent;
             mDeliveryIntent = deliveryIntent;
@@ -1673,7 +1799,14 @@ public abstract class SMSDispatcher extends Handler {
                 isSinglePartOrLastPart = mUnsentPartCount.decrementAndGet() == 0;
             }
             if (isSinglePartOrLastPart) {
+                // MTK_START: use AsyncTask to access database
+                /*
                 persistOrUpdateMessage(context, Sms.MESSAGE_TYPE_FAILED, errorCode);
+                */
+                new AsyncPersistOrUpdateTask(context, Sms.MESSAGE_TYPE_FAILED,
+                        errorCode, error, true).execute();
+                return;
+                // MTK-END
             }
             if (mSentIntent != null) {
                 try {
@@ -1690,11 +1823,30 @@ public abstract class SMSDispatcher extends Handler {
                         // Is multipart and last part
                         fillIn.putExtra(SEND_NEXT_MSG_EXTRA, true);
                     }
+                    // MTK-START
+                    putPduSize(fillIn);
+                    // MTK-END
                     mSentIntent.send(context, error, fillIn);
                 } catch (CanceledException ex) {
                     Rlog.e(TAG, "Failed to send result");
                 }
             }
+        }
+
+        private void putPduSize(Intent fillIn) {
+            int szPdu = 0;
+            int smscLength = 0;
+            int pduLength = 0;
+            if (mData != null) {
+                if (mData.get("smsc") != null) {
+                    smscLength = ((byte[]) mData.get("smsc")).length;
+                }
+                if (mData.get("pdu") != null) {
+                    pduLength = ((byte[]) mData.get("pdu")).length;
+                }
+                szPdu = smscLength + pduLength;
+            }
+            fillIn.putExtra(PDU_SIZE, szPdu);
         }
 
         /**
@@ -1713,7 +1865,11 @@ public abstract class SMSDispatcher extends Handler {
                 if (mAnyPartFailed != null && mAnyPartFailed.get()) {
                     messageType = Sms.MESSAGE_TYPE_FAILED;
                 }
-                persistOrUpdateMessage(context, messageType, 0/*errorCode*/);
+                // MTK_START: use AsyncTask to access database
+                //persistOrUpdateMessage(context, messageType, 0/*errorCode*/);
+                new AsyncPersistOrUpdateTask(context, messageType, 0, 0, false).execute();
+                return;
+                // MTK-END
             }
             if (mSentIntent != null) {
                 try {
@@ -1727,12 +1883,88 @@ public abstract class SMSDispatcher extends Handler {
                         // Is multipart and last part
                         fillIn.putExtra(SEND_NEXT_MSG_EXTRA, true);
                     }
+                    // MTK-START
+                    putPduSize(fillIn);
+                    fillIn.putExtra(MSG_REF_NUM, mMessageRef);
+                    Rlog.d(TAG, "message reference number : " + mMessageRef);
+                    // MTK-END
                     mSentIntent.send(context, Activity.RESULT_OK, fillIn);
                 } catch (CanceledException ex) {
                     Rlog.e(TAG, "Failed to send result");
                 }
             }
         }
+
+        // MTK-START: Using async task to access database
+        /**
+         * Async Task to persist or update message.
+         */
+        class AsyncPersistOrUpdateTask extends AsyncTask<Void, Void, Void> {
+
+            private final Context mContext;
+            private int mMessageType;
+            private int mErrorCode;
+            private int mError;
+            private boolean mFail;
+            public AsyncPersistOrUpdateTask(Context context, int messageType,
+                    int errorCode, int error, boolean fail) {
+                mContext = context;
+                mMessageType = messageType;
+                mErrorCode = errorCode;
+                mError = error;
+                mFail = fail;
+            }
+
+            @Override
+            protected Void doInBackground(Void... params) {
+                persistOrUpdateMessage(mContext, mMessageType, mErrorCode);
+                return null;
+            }
+
+            @Override
+            protected void onPostExecute(Void result) {
+                if (mSentIntent != null) {
+                    try {
+                        // Extra information to send with the sent intent
+                        Intent fillIn = new Intent();
+                        if (mMessageUri != null) {
+                            // Pass this to SMS apps so that they know where it is stored
+                            fillIn.putExtra("uri", mMessageUri.toString());
+                        }
+                        if (mFail && (mErrorCode != 0)) {
+                            fillIn.putExtra("errorCode", mErrorCode);
+                        }
+                        if (mUnsentPartCount != null) {
+                            // Is multipart and last part
+                            fillIn.putExtra(SEND_NEXT_MSG_EXTRA, true);
+                        }
+                        int szPdu = 0;
+                        int smscLength = 0;
+                        int pduLength = 0;
+                        if (mData != null) {
+                            if (mData.get("smsc") != null) {
+                                smscLength = ((byte[]) mData.get("smsc")).length;
+                            }
+                            if (mData.get("pdu") != null) {
+                                pduLength = ((byte[]) mData.get("pdu")).length;
+                            }
+                            szPdu = smscLength + pduLength;
+                        }
+                        fillIn.putExtra(PDU_SIZE, szPdu);
+                        if (!mFail) {
+                            fillIn.putExtra(MSG_REF_NUM, mMessageRef);
+                            Rlog.d(TAG, "message reference number : " + mMessageRef);
+                            mSentIntent.send(mContext, Activity.RESULT_OK, fillIn);
+                        } else {
+                            mSentIntent.send(mContext, mError, fillIn);
+                        }
+                    } catch (CanceledException ex) {
+                        Rlog.e(TAG, "Failed to send result");
+                    }
+                }
+            }
+        }
+        //MTK-END
     }
 
     protected SmsTracker getSmsTracker(HashMap<String, Object> data, PendingIntent sentIntent,
@@ -1750,6 +1982,9 @@ public abstract class SMSDispatcher extends Handler {
         if (packageNames != null && packageNames.length > 0) {
             try {
                 // XXX this is lossy- apps can share a UID
+                // MTK-START
+                packageNames[0] = getPackageNameViaProcessId(packageNames);
+                // MTK-END
                 appInfo = pm.getPackageInfoAsUser(
                         packageNames[0], PackageManager.GET_SIGNATURES, userId);
             } catch (PackageManager.NameNotFoundException e) {
@@ -1911,7 +2146,9 @@ public abstract class SMSDispatcher extends Handler {
         }
     }
 
-    private String getMultipartMessageText(ArrayList<String> parts) {
+    // MTK-START, modify as protect to let GsmSmsDispatcher to use
+    protected String getMultipartMessageText(ArrayList<String> parts) {
+    // MTK-END
         final StringBuilder sb = new StringBuilder();
         for (String part : parts) {
             if (part != null) {
@@ -1962,4 +2199,96 @@ public abstract class SMSDispatcher extends Handler {
     protected boolean isCdmaMo() {
         return mSmsDispatchersController.isCdmaMo();
     }
+
+    // MTK-START
+    /**
+     * Because it may have multiple apks use the same uid, ex. Mms.apk and omacp.apk, we need to
+     * exactly find the correct calling apk. We should use running process to check the correct
+     * apk. If we could not find the process via pid, this apk may be killed. We will use the
+     * default behavior, find the first package name via uid.
+     */
+    protected String getPackageNameViaProcessId(String[] packageNames) {
+        return (packageNames != null && packageNames.length > 0)? packageNames[0] : null;
+    }
+
+    /**
+     * A hook for sendData.
+     *
+     * The default implementation is AOSP's behavior.
+     * The sub class can override this function to return a different PDU if needed.
+     */
+    protected SmsMessageBase.SubmitPduBase onSendData(
+            String destAddr, String scAddr, int destPort,
+            byte[] data, PendingIntent sentIntent, PendingIntent deliveryIntent) {
+        return getSubmitPdu(
+                scAddr, destAddr, destPort, data, (deliveryIntent != null));
+    }
+
+    /**
+     * A hook for sendText.
+     *
+     * The default implementation is AOSP's behavior.
+     * The sub class can override this function to return a different PDU if needed
+     */
+    protected SmsMessageBase.SubmitPduBase onSendText(
+            String destAddr, String scAddr, String text,
+            PendingIntent sentIntent, PendingIntent deliveryIntent, Uri messageUri,
+            String callingPkg, boolean persistMessage, int priority,
+            boolean expectMore, int validityPeriod) {
+        return getSubmitPdu(
+                scAddr, destAddr, text, (deliveryIntent != null), null, priority, validityPeriod);
+    }
+
+    /**
+     * A hook for sendMultipartText.
+     *
+     * The default implementation is AOSP's behavior.
+     * The sub class can override this function to return a different encoding type
+     * and change the content of encodingForParts
+     */
+    protected int onSendMultipartText(String destAddr, String scAddr,
+                ArrayList<String> parts, ArrayList<PendingIntent> sentIntents,
+                ArrayList<PendingIntent> deliveryIntents, Uri messageUri, String callingPkg,
+                boolean persistMessage, int priority, boolean expectMore, int validityPeriod,
+                TextEncodingDetails[] encodingForParts) {
+        int msgCount = parts.size();
+        int encoding = SmsConstants.ENCODING_UNKNOWN;
+        for (int i = 0; i < msgCount; i++) {
+            TextEncodingDetails details = calculateLength(parts.get(i), false);
+            if (encoding != details.codeUnitSize
+                    && (encoding == SmsConstants.ENCODING_UNKNOWN
+                            || encoding == SmsConstants.ENCODING_7BIT)) {
+                encoding = details.codeUnitSize;
+            }
+            encodingForParts[i] = details;
+        }
+        return encoding;
+    }
+
+    /**
+     * A hook for getNewSubmitPduTracker.
+     *
+     * The default implementation is AOSP's behavior.
+     * The sub class can override this function to return a different PDU if needed
+     */
+    protected SmsMessageBase.SubmitPduBase onGetNewSubmitCdmaPduTracker(
+            String destinationAddress, String scAddress,
+            String message, SmsHeader smsHeader, int encoding,
+            PendingIntent sentIntent, PendingIntent deliveryIntent, boolean lastPart,
+            AtomicInteger unsentPartCount, AtomicBoolean anyPartFailed, Uri messageUri,
+            String fullMessageText, int priority, boolean expectMore, int validityPeriod) {
+        UserData uData = new UserData();
+        uData.payloadStr = message;
+        uData.userDataHeader = smsHeader;
+        if (encoding == SmsConstants.ENCODING_7BIT) {
+            uData.msgEncoding = UserData.ENCODING_GSM_7BIT_ALPHABET;
+        } else { // assume UTF-16
+            uData.msgEncoding = UserData.ENCODING_UNICODE_16;
+        }
+        uData.msgEncodingSet = true;
+
+        return com.android.internal.telephony.cdma.SmsMessage.getSubmitPdu(destinationAddress,
+                            uData, (deliveryIntent != null) && lastPart, priority);
+    }
+    // MTK-END
 }

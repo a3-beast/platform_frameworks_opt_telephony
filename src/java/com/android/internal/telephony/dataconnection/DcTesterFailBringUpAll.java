@@ -74,7 +74,7 @@ public class DcTesterFailBringUpAll {
         }
     };
 
-    DcTesterFailBringUpAll(Phone phone, Handler handler) {
+    public DcTesterFailBringUpAll(Phone phone, Handler handler) {
         mPhone = phone;
         if (Build.IS_DEBUGGABLE) {
             IntentFilter filter = new IntentFilter();

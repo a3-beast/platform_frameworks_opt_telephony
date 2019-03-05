@@ -18,6 +18,7 @@ package com.android.internal.telephony.dataconnection;
 
 import android.content.Context;
 import android.hardware.radio.V1_0.ApnTypes;
+import android.os.Bundle;
 import android.os.PersistableBundle;
 import android.provider.Telephony.Carriers;
 import android.telephony.CarrierConfigManager;
@@ -32,6 +33,7 @@ import com.android.internal.telephony.PhoneConstants;
 import com.android.internal.telephony.RILConstants;
 import com.android.internal.telephony.uicc.IccRecords;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -86,7 +88,7 @@ public class ApnSetting {
      * @deprecated use {@code networkTypeBitmask} instead
      */
     @Deprecated
-    private final int bearer;
+    protected final int bearer;
     /**
       * Radio Access Technology info
       * To check what values can hold, refer to ServiceState.java. This is a bitmask of radio
@@ -145,6 +147,57 @@ public class ApnSetting {
      * retried by the retry manager anymore.
      * */
     public boolean permanentFailed = false;
+
+    /**
+     * Static methods used for MTK add-on reflections
+     */
+    private static Method sMethodFromStringEx;
+    private static Method sMethodMvnoMatchesEx;
+    private static Method sMethodIsMeteredApnTypeEx;
+    private static Method sMethodgetApnBitmaskEx;
+    static {
+        Class<?> clz = null;
+        try {
+            clz = Class.forName("com.mediatek.internal.telephony.dataconnection."
+                    + "MtkApnSetting");
+        } catch (Exception e) {
+            Rlog.d(LOG_TAG, e.toString());
+        }
+        if (clz != null) {
+            try {
+                sMethodFromStringEx = clz.getDeclaredMethod("fromStringEx", String[].class,
+                        int.class, String[].class, String.class, String.class, boolean.class,
+                        int.class, int.class, boolean.class, int.class, int.class, int.class,
+                        int.class, String.class, String.class, int.class);
+                sMethodFromStringEx.setAccessible(true);
+            } catch (Exception e) {
+                Rlog.d(LOG_TAG, e.toString());
+            }
+
+            try {
+                sMethodMvnoMatchesEx = clz.getDeclaredMethod("mvnoMatchesEx", IccRecords.class,
+                        String.class, String.class);
+                sMethodMvnoMatchesEx.setAccessible(true);
+            } catch (Exception e) {
+                Rlog.d(LOG_TAG, e.toString());
+            }
+
+            try {
+                sMethodIsMeteredApnTypeEx = clz.getDeclaredMethod("isMeteredApnTypeEx",
+                        String.class, Phone.class);
+                sMethodIsMeteredApnTypeEx.setAccessible(true);
+            } catch (Exception e) {
+                Rlog.d(LOG_TAG, e.toString());
+            }
+
+            try{
+                sMethodgetApnBitmaskEx = clz.getMethod("getApnBitmaskEx", String.class);
+                sMethodgetApnBitmaskEx.setAccessible(true);
+            } catch (Exception e) {
+                Rlog.d(LOG_TAG, e.toString());
+            }
+        }
+    }
 
     /**
      * @deprecated this constructor is no longer supported. Use the other constructor which takes
@@ -404,6 +457,18 @@ public class ApnSetting {
             networkTypeBitmask =
                     ServiceState.convertBearerBitmaskToNetworkTypeBitmask(bearerBitmask);
         }
+        /// M: reflection for telephony add-on @{
+        try {
+            if (sMethodFromStringEx != null) {
+                return (ApnSetting) sMethodFromStringEx.invoke(null, a, authType, typeArray,
+                        protocol, roamingProtocol, carrierEnabled, networkTypeBitmask, profileId,
+                        modemCognitive, maxConns, waitTime, maxConnsTime, mtu, mvnoType,
+                        mvnoMatchData, apnSetId);
+            }
+        } catch (Exception e) {
+            Rlog.d(LOG_TAG, e.toString());
+        }
+        /// @}
         return new ApnSetting(-1, a[10] + a[11], a[0], a[1], a[2], a[3], a[7], a[8], a[9], a[4],
                 a[5], authType, typeArray, protocol, roamingProtocol, carrierEnabled,
                 networkTypeBitmask, profileId, modemCognitive, maxConns, waitTime, maxConnsTime,
@@ -506,7 +571,7 @@ public class ApnSetting {
         return false;
     }
 
-    private static boolean imsiMatches(String imsiDB, String imsiSIM) {
+    public static boolean imsiMatches(String imsiDB, String imsiSIM) {
         // Note: imsiDB value has digit number or 'x' character for seperating USIM information
         // for MVNO operator. And then digit number is matched at same order and 'x' character
         // could replace by any digit number.
@@ -554,7 +619,15 @@ public class ApnSetting {
                 return true;
             }
         }
-
+        /// M: reflection for telephony add-on @{
+        try {
+            if (sMethodMvnoMatchesEx != null) {
+                return (boolean) sMethodMvnoMatchesEx.invoke(null, r, mvnoType, mvnoMatchData);
+            }
+        } catch (Exception e) {
+            Rlog.d(LOG_TAG, e.toString());
+        }
+        /// @}
         return false;
     }
 
@@ -569,6 +642,18 @@ public class ApnSetting {
         if (phone == null) {
             return true;
         }
+        /// M: reflection for telephony add-on @{
+        try {
+            if (sMethodIsMeteredApnTypeEx != null) {
+                Bundle b = (Bundle) sMethodIsMeteredApnTypeEx.invoke(null, type, phone);
+                if (b.getBoolean("useEx")) {
+                    return b.getBoolean("result");
+                }
+            }
+        } catch (Exception e) {
+            Rlog.d(LOG_TAG, e.toString());
+        }
+        /// @}
 
         boolean isRoaming = phone.getServiceState().getDataRoaming();
         boolean isIwlan = phone.getServiceState().getRilDataRadioTechnology()
@@ -814,6 +899,16 @@ public class ApnSetting {
 
     // Helper function to convert APN string into a 32-bit bitmask.
     private static int getApnBitmask(String apn) {
+        /// M: reflection for telephony add-on @{
+        try {
+            if (sMethodgetApnBitmaskEx != null) {
+                return (int)sMethodgetApnBitmaskEx.invoke(null, apn);
+            }
+        } catch (Exception e) {
+            Rlog.d(LOG_TAG, e.toString());
+        }
+        /// @}
+
         switch (apn) {
             case PhoneConstants.APN_TYPE_DEFAULT: return ApnTypes.DEFAULT;
             case PhoneConstants.APN_TYPE_MMS: return ApnTypes.MMS;

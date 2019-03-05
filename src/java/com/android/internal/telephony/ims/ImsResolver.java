@@ -48,6 +48,7 @@ import android.util.SparseArray;
 import com.android.ims.internal.IImsServiceFeatureCallback;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.os.SomeArgs;
+import com.android.internal.telephony.TelephonyComponentFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -321,7 +322,10 @@ public class ImsResolver implements ImsServiceController.ImsServiceControllerCal
                 @Override
                 public ImsServiceController create(Context context, ComponentName componentName,
                         ImsServiceController.ImsServiceControllerCallbacks callbacks) {
-                    return new ImsServiceControllerStaticCompat(context, componentName, callbacks);
+                    /// M: use MTK implementation if available @{
+                    return TelephonyComponentFactory.getInstance()
+                            .makeStaticImsServiceController(context, componentName, callbacks);
+                    /// @}
                 }
             };
 
@@ -1129,6 +1133,17 @@ public class ImsResolver implements ImsServiceController.ImsServiceControllerCal
             // New ImsService is registered as device default and must be newly bound.
             bindImsService(service);
         }
+    }
+
+    /**
+     * @return true if the ImsResolver is in the process of resolving a dynamic query and should not
+     * be considered available, false if the ImsResolver is idle.
+     */
+    public boolean isResolvingBinding() {
+        return mHandler.hasMessages(HANDLER_START_DYNAMIC_FEATURE_QUERY)
+                // We haven't processed this message yet, so it is still resolving.
+                || mHandler.hasMessages(HANDLER_DYNAMIC_FEATURE_CHANGE)
+                || mFeatureQueryManager.isQueryInProgress();
     }
 
     private String printFeatures(Set<ImsFeatureConfiguration.FeatureSlotPair> features) {

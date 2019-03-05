@@ -134,8 +134,10 @@ public class PhoneFactory {
                         }
                     }
                 }
+                TelephonyComponentFactory telephonyComponentFactory
+                        = TelephonyComponentFactory.getInstance();
 
-                sPhoneNotifier = new DefaultPhoneNotifier();
+                sPhoneNotifier = telephonyComponentFactory.makeDefaultPhoneNotifier();
 
                 int cdmaSubscription = CdmaSubscriptionSourceManager.getDefault(context);
                 Rlog.i(LOG_TAG, "Cdma Subscription set to " + cdmaSubscription);
@@ -168,11 +170,16 @@ public class PhoneFactory {
                     networkModes[i] = RILConstants.PREFERRED_NETWORK_MODE;
 
                     Rlog.i(LOG_TAG, "Network Mode set to " + Integer.toString(networkModes[i]));
-                    sCommandsInterfaces[i] = new RIL(context, networkModes[i],
+                    sCommandsInterfaces[i] =
+                            telephonyComponentFactory.makeRil(context, networkModes[i],
                             cdmaSubscription, i);
                 }
                 Rlog.i(LOG_TAG, "Creating SubscriptionController");
                 SubscriptionController.init(context, sCommandsInterfaces);
+                telephonyComponentFactory.initRadioManager(context, numPhones, sCommandsInterfaces);
+                /// M: eMBMS feature
+                telephonyComponentFactory.initEmbmsAdaptor(context, sCommandsInterfaces);
+                /// M: eMBMS end
 
                 // Instantiate UiccController so that all other classes can just
                 // call getInstance()
@@ -188,15 +195,15 @@ public class PhoneFactory {
                     Phone phone = null;
                     int phoneType = TelephonyManager.getPhoneType(networkModes[i]);
                     if (phoneType == PhoneConstants.PHONE_TYPE_GSM) {
-                        phone = new GsmCdmaPhone(context,
+                        phone = telephonyComponentFactory.makePhone(context,
                                 sCommandsInterfaces[i], sPhoneNotifier, i,
                                 PhoneConstants.PHONE_TYPE_GSM,
-                                TelephonyComponentFactory.getInstance());
+                                telephonyComponentFactory.getInstance());
                     } else if (phoneType == PhoneConstants.PHONE_TYPE_CDMA) {
-                        phone = new GsmCdmaPhone(context,
+                        phone = telephonyComponentFactory.makePhone(context,
                                 sCommandsInterfaces[i], sPhoneNotifier, i,
                                 PhoneConstants.PHONE_TYPE_CDMA_LTE,
-                                TelephonyComponentFactory.getInstance());
+                                telephonyComponentFactory.getInstance());
                     }
                     Rlog.i(LOG_TAG, "Creating Phone with type = " + phoneType + " sub = " + i);
 
@@ -224,10 +231,28 @@ public class PhoneFactory {
 
                 sMadeDefaults = true;
 
+                telephonyComponentFactory.makeNetworkStatusUpdater(sPhones, numPhones);
+
                 Rlog.i(LOG_TAG, "Creating SubInfoRecordUpdater ");
-                sSubInfoRecordUpdater = new SubscriptionInfoUpdater(
+                // MTK-START: add on
+                sSubInfoRecordUpdater = telephonyComponentFactory.makeSubscriptionInfoUpdater(
                         BackgroundThread.get().getLooper(), context, sPhones, sCommandsInterfaces);
+                // MTK-END
                 SubscriptionController.getInstance().updatePhonesAvailability(sPhones);
+
+                // M: for data sub selector
+                telephonyComponentFactory.makeDataSubSelector(sContext, numPhones);
+
+                // M: for smart data switch
+                telephonyComponentFactory.makeSmartDataSwitchAssistant(sContext, sPhones);
+
+                // M: for telephony add-on, SuppServManager need to be initialized before the
+                // following supplementary service requests
+                telephonyComponentFactory.makeSuppServManager(sContext, sPhones);
+
+                // M: for telephony add-on, DcHelper needs to be created before the following
+                // startMonitoringImsService call
+                telephonyComponentFactory.makeDcHelper(sContext, sPhones);
 
                 // Start monitoring after defaults have been made.
                 // Default phone must be ready before ImsPhone is created because ImsService might
@@ -243,7 +268,9 @@ public class PhoneFactory {
 
                 sSubscriptionMonitor = new SubscriptionMonitor(tr, sContext, sc, numPhones);
 
-                sPhoneSwitcher = new PhoneSwitcher(MAX_ACTIVE_PHONES, numPhones,
+                // M: for telephony add-on
+                sPhoneSwitcher = telephonyComponentFactory
+                        .makePhoneSwitcher(MAX_ACTIVE_PHONES, numPhones,
                         sContext, sc, Looper.myLooper(), tr, sCommandsInterfaces,
                         sPhones);
 
@@ -256,10 +283,14 @@ public class PhoneFactory {
 
                 sTelephonyNetworkFactories = new TelephonyNetworkFactory[numPhones];
                 for (int i = 0; i < numPhones; i++) {
-                    sTelephonyNetworkFactories[i] = new TelephonyNetworkFactory(
+                    // M: for telephony add-on
+                    sTelephonyNetworkFactories[i] = telephonyComponentFactory
+                            .makeTelephonyNetworkFactories(
                             sPhoneSwitcher, sc, sSubscriptionMonitor, Looper.myLooper(),
                             sContext, i, sPhones[i].mDcTracker);
                 }
+                telephonyComponentFactory.makeWorldPhoneManager();
+                telephonyComponentFactory.initCarrierExpress();
             }
         }
     }

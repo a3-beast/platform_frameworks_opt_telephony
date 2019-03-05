@@ -44,10 +44,14 @@ import java.util.HashSet;
  */
 public class SmsBroadcastUndelivered {
     private static final String TAG = "SmsBroadcastUndelivered";
-    private static final boolean DBG = InboundSmsHandler.DBG;
+    // MTK-START
+    // Modification for sub class
+    protected static final boolean DBG = InboundSmsHandler.DBG;
 
     /** Delete any partial message segments older than 30 days. */
-    static final long DEFAULT_PARTIAL_SEGMENT_EXPIRE_AGE = (long) (60 * 60 * 1000) * 24 * 30;
+    protected static final long DEFAULT_PARTIAL_SEGMENT_EXPIRE_AGE =
+            (long) (60 * 60 * 1000) * 24 * 30;
+    // MTK-END
 
     /**
      * Query projection for dispatching pending messages at boot time.
@@ -68,14 +72,17 @@ public class SmsBroadcastUndelivered {
 
     private static SmsBroadcastUndelivered instance;
 
+    // MTK-START
+    // Modification for sub class
     /** Content resolver to use to access raw table from SmsProvider. */
-    private final ContentResolver mResolver;
+    protected final ContentResolver mResolver;
 
     /** Handler for 3GPP-format messages (may be null). */
-    private final GsmInboundSmsHandler mGsmInboundSmsHandler;
+    protected final GsmInboundSmsHandler mGsmInboundSmsHandler;
 
     /** Handler for 3GPP2-format messages (may be null). */
-    private final CdmaInboundSmsHandler mCdmaInboundSmsHandler;
+    protected final CdmaInboundSmsHandler mCdmaInboundSmsHandler;
+    // MTK-END
 
     /** Broadcast receiver that processes the raw table when the user unlocks the phone for the
      *  first time after reboot and the credential-encrypted storage is available.
@@ -122,8 +129,11 @@ public class SmsBroadcastUndelivered {
         }
     }
 
-    private SmsBroadcastUndelivered(Context context, GsmInboundSmsHandler gsmInboundSmsHandler,
+    // MTK-START
+    // Modification for sub class
+    protected SmsBroadcastUndelivered(Context context, GsmInboundSmsHandler gsmInboundSmsHandler,
             CdmaInboundSmsHandler cdmaInboundSmsHandler) {
+    // MTK-END
         mResolver = context.getContentResolver();
         mGsmInboundSmsHandler = gsmInboundSmsHandler;
         mCdmaInboundSmsHandler = cdmaInboundSmsHandler;
@@ -142,7 +152,10 @@ public class SmsBroadcastUndelivered {
     /**
      * Scan the raw table for complete SMS messages to broadcast, and old PDUs to delete.
      */
-    private void scanRawTable(Context context) {
+    // MTK-START
+    // Modification for sub class
+    protected void scanRawTable(Context context) {
+    // MTK-END
         if (DBG) Rlog.d(TAG, "scanning raw table for undelivered messages");
         long startTime = System.nanoTime();
         HashMap<SmsReferenceKey, Integer> multiPartReceivedCount =
@@ -225,7 +238,10 @@ public class SmsBroadcastUndelivered {
     /**
      * Send tracker to appropriate (3GPP or 3GPP2) inbound SMS handler for broadcast.
      */
-    private void broadcastSms(InboundSmsTracker tracker) {
+    // MTK-START
+    // Modification for sub class
+    protected void broadcastSms(InboundSmsTracker tracker) {
+    // MTK-END
         InboundSmsHandler handler;
         if (tracker.is3gpp2()) {
             handler = mCdmaInboundSmsHandler;
@@ -239,7 +255,10 @@ public class SmsBroadcastUndelivered {
         }
     }
 
-    private long getUndeliveredSmsExpirationTime(Context context) {
+    // MTK-START
+    // Change visibility for add-on
+    protected long getUndeliveredSmsExpirationTime(Context context) {
+    // MTK-END
         int subId = SubscriptionManager.getDefaultSmsSubscriptionId();
         CarrierConfigManager configManager =
                 (CarrierConfigManager) context.getSystemService(Context.CARRIER_CONFIG_SERVICE);
